@@ -15,14 +15,17 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 19, state["market_deck"].size
     assert_equal 3, state["system"].size
     assert_equal 3, state["deep"].size
-    assert_equal 10, state["crisis_deck"].size
+    assert state["incoming_crisis"].present?
+    assert_equal 9, state["crisis_deck"].size
+    assert_equal 3, state["orders"]
+    assert_equal({ "expedition" => 0, "industry" => 0, "command" => 0 }, state["tech"])
   end
 
   test "silent protocol opens with a silent ping" do
     game = CinderReach::Engine.start!(difficulty: "silent")
 
     assert_equal 1, game.state["fleet"]
-    assert_equal "silent_ping", game.state["crisis_deck"].first
+    assert_equal "silent_ping", game.state["incoming_crisis"]
   end
 
   test "playing cards gains supply tags and resolves effects" do
@@ -40,6 +43,49 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 1, engine.state["fleet"]
     assert_equal 5, engine.state["supply"]
     assert_equal %w[DECREE FLEET], engine.tags
+  end
+
+  test "orders force a choice among cards in hand" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["hand"] = %w[colonist militia charter colonist]
+    game.update!(state: state)
+
+    3.times { game.engine.play_card!(0) }
+
+    assert_equal 0, game.state["orders"]
+    assert_equal 1, game.state["hand"].size
+    assert_raises(CinderReach::InvalidMove) { game.engine.play_card!(0) }
+  end
+
+  test "research spends supply and matching tags for a permanent upgrade" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["played"] = [ "colonist" ]
+    state["supply"] = 2
+    game.update!(state: state)
+
+    game.engine.research!("industry")
+
+    assert_equal 1, game.state.dig("tech", "industry")
+    assert_equal 0, game.state["supply"]
+    assert_equal "crisis", game.state["phase"]
+    assert game.state["current_crisis"].present?
+  end
+
+  test "the next crisis is visible before committing and advances after the action" do
+    game = CinderReach::Engine.start!
+    incoming = game.state["incoming_crisis"]
+    following = game.state["crisis_deck"].first
+    state = game.state
+    state["supply"] = 2
+    state["reach"] = [ "survey_skiff" ]
+    game.update!(state: state)
+
+    game.engine.buy!(0)
+
+    assert_equal incoming, game.state["current_crisis"]
+    assert_equal following, game.state["incoming_crisis"]
   end
 
   test "buy uses discounts and reveals a crisis" do

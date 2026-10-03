@@ -5,16 +5,17 @@ module ApplicationHelper
   def card_data(key) = CinderReach::Catalog.card(key)
   def world_data(key) = CinderReach::Catalog.world(key)
   def crisis_data(key) = CinderReach::Catalog.crisis(key)
+  def tech_data(key) = CinderReach::Catalog.tech_track(key)
 
-  def effective_buy_cost(state, key)
-    data = card_data(key)
-    vault = state["vault_discount"] && data[:tag] == "LAB"
-    [ data[:cost] - state["buy_discount"] - (vault ? 2 : 0), 0 ].max
+  def effective_buy_cost(_state, key)
+    @engine.effective_buy_cost(key)
   end
 
-  def effective_survey_cost(state, key)
-    [ world_data(key)[:survey] - state["survey_discount"], 0 ].max
+  def effective_survey_cost(_state, key)
+    @engine.effective_survey_cost(key)
   end
+
+  def effective_colony_cost(_state, key) = @engine.effective_colony_cost(key)
 
   def card_tone(tag) = tag&.downcase || "neutral"
 end

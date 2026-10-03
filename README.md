@@ -17,12 +17,14 @@ Then open <http://localhost:3000>. Runs are saved in SQLite and can be continued
 
 Each cycle has four phases:
 
-1. Play any cards from your hand to gain Supply and activate effects.
-2. Take one main action: buy, survey (and optionally colonize), or purge.
-3. Reveal and resolve one crisis. The tags on played cards provide cover.
+1. Inspect the incoming crisis, then spend one of your three starting Orders per selected card.
+2. Take one main action: buy, survey (and optionally colonize), research, or purge.
+3. Resolve the crisis you prepared for. The tags on played cards provide cover.
 4. Clean up, lose unspent Supply, and draw five cards.
 
 Win immediately by reaching four Colonies before the Fleet lands, or finish cycle ten with at least two Colonies. Stability 0 is a loss. Fleet 5 is a loss unless two Colonies and the Defense Grid are online.
+
+Research permanently advances one of three technology tracks. Expedition makes worlds cheaper and more productive, Industry strengthens the economy, and Command adds Orders and defensive systems. Each advance requires both Supply and matching tags in play, so deck composition determines which strategic paths are open.
 
 ## Verification
 

@@ -9,7 +9,7 @@
     <p class="world-flavor"><%= data[:flavor] %></p>
     <dl>
       <div><dt>Survey <b><%= survey_cost %></b></dt><dd><%= data[:survey_text] %></dd></div>
-      <div><dt>Colonize <b><%= data[:colony] %></b></dt><dd><%= data[:colony_text] %></dd></div>
+      <div><dt>Colonize <b><%= effective_colony_cost(@state, world_key) %></b></dt><dd><%= data[:colony_text] %></dd></div>
     </dl>
     <% if @state["phase"] == "play" %>
       <span class="world-action-label"><%= survey_disabled ? "SURVEY COST #{survey_cost}" : "SURVEY · #{survey_cost} SUPPLY" %></span>

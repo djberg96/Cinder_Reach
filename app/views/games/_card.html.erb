@@ -18,7 +18,7 @@
     <p><%= data[:text] %></p>
   </div>
   <% if playable %>
-    <span class="card-action-label"><%= local_assigns[:disabled] ? "WAITING" : "PLAY · +#{data[:supply]} SUPPLY" %></span>
+    <span class="card-action-label"><%= local_assigns[:disabled] ? (@state["orders"] <= 0 ? "NO ORDERS" : "WAITING") : "PLAY · +#{data[:supply]} SUPPLY" %></span>
     <%= button_to "", play_card_game_path(@game, card_index: local_assigns[:index]), class: "card-hit-area", disabled: local_assigns[:disabled], form: { class: "card-hit-form" }, aria: { label: "Play #{data[:name]} for #{data[:supply]} Supply" } %>
   <% elsif local_assigns[:buyable] %>
     <span class="card-action-label"><%= local_assigns[:disabled] ? "COST #{cost}" : "BUY · #{cost} SUPPLY" %></span>

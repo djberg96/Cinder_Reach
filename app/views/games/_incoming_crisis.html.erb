@@ -1,0 +1,14 @@
+<% signal_key = @state["incoming_crisis"] %>
+<% if signal_key && @state["phase"] == "play" %>
+  <% signal = crisis_data(signal_key) %>
+  <section class="incoming-crisis threat-<%= signal[:threat].downcase %>">
+    <div class="incoming-heading">
+      <span class="incoming-pulse" aria-hidden="true"></span>
+      <span class="micro-label">INCOMING AFTER YOUR ACTION</span>
+      <b><%= signal[:threat] %></b>
+    </div>
+    <h2><%= signal[:name] %></h2>
+    <p><%= signal[:text] %></p>
+    <small>Choose your cards with this threat in mind.</small>
+  </section>
+<% end %>

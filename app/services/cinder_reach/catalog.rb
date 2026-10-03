@@ -6,14 +6,14 @@ module CinderReach
       "charter" => { name: "Charter", tag: "DECREE", supply: 2, kind: "starter", text: "+2 Supply." },
       "outpost" => { name: "Outpost", tag: "COLONY", supply: 2, kind: "side", text: "+2 Supply. Colony site." },
       "unrest" => { name: "Unrest", tag: nil, supply: 0, kind: "unrest", text: "Dead weight. Scrap only by card effects." },
-      "survey_skiff" => { name: "Survey Skiff", tag: "SURVEY", supply: 2, cost: 2, text: "+2 Supply. Your survey this cycle costs 1 less." },
+      "survey_skiff" => { name: "Survey Skiff", tag: "SURVEY", supply: 2, orders: 1, cost: 2, text: "+2 Supply. +1 Order. Your survey this cycle costs 1 less." },
       "habitat_ring" => { name: "Habitat Ring", tag: "COLONY", supply: 2, cost: 3, text: "+2 Supply." },
-      "decree" => { name: "Decree", tag: "DECREE", supply: 1, cost: 2, text: "+1 Supply. Scrap an Unrest from hand, play, or discard." },
+      "decree" => { name: "Decree", tag: "DECREE", supply: 1, orders: 1, cost: 2, text: "+1 Supply. +1 Order. Scrap an Unrest from hand, play, or discard." },
       "embassy" => { name: "Embassy", tag: "DECREE", supply: 2, cost: 3, text: "+2 Supply. Stability +1." },
       "militia_wing" => { name: "Militia Wing", tag: "FLEET", supply: 2, cost: 3, text: "+2 Supply. Intercept." },
       "field_lab" => { name: "Field Lab", tag: "LAB", supply: 2, cost: 4, text: "+2 Supply. Your next buy this cycle costs 1 less." },
       "foundry" => { name: "Foundry", tag: "COLONY", supply: 3, cost: 4, text: "+3 Supply." },
-      "listener_array" => { name: "Listener Array", tag: "SURVEY", supply: 2, cost: 4, text: "+2 Supply. Look at the top crisis; you may put it on the bottom." },
+      "listener_array" => { name: "Listener Array", tag: "SURVEY", supply: 2, cost: 4, text: "+2 Supply. You may send the incoming crisis to the bottom." },
       "gene_vault" => { name: "Gene Vault", tag: "LAB", supply: 2, cost: 5, text: "+2 Supply. Draw 1." },
       "gunship" => { name: "Gunship", tag: "FLEET", supply: 3, cost: 5, text: "+3 Supply. Fleet −1. Intercept." },
       "arcology" => { name: "Arcology", tag: "COLONY", supply: 4, cost: 6, text: "+4 Supply. Stability +1." },
@@ -49,11 +49,39 @@ module CinderReach
       "beacon_flicker" => { name: "Beacon Flicker", text: "If you have fewer than 2 Colonies: Stability −1 and Fleet +1.", threat: "SIGNAL" }
     }.freeze
 
+    TECH_TRACKS = {
+      "expedition" => {
+        name: "Expedition", symbol: "⌁", tags: %w[SURVEY LAB],
+        levels: [
+          { name: "Long-range probes", cost: 2, tags: 1, text: "All surveys cost 1 less." },
+          { name: "Scavenger crews", cost: 4, tags: 2, text: "Every survey recovers 1 Supply." },
+          { name: "Gate routes", cost: 6, tags: 2, text: "All colonies cost 2 less." }
+        ]
+      },
+      "industry" => {
+        name: "Industry", symbol: "⬡", tags: %w[COLONY LAB],
+        levels: [
+          { name: "Efficient foundries", cost: 2, tags: 1, text: "Reach cards cost 1 less." },
+          { name: "Orbital works", cost: 4, tags: 2, text: "Begin each cycle with 1 Supply." },
+          { name: "Matter forge", cost: 6, tags: 2, text: "Begin each cycle with 3 Supply." }
+        ]
+      },
+      "command" => {
+        name: "Command", symbol: "✦", tags: %w[FLEET DECREE],
+        levels: [
+          { name: "Expanded staff", cost: 2, tags: 1, text: "Gain a fourth Order each cycle." },
+          { name: "Civil defense", cost: 4, tags: 2, text: "Ignore the first Stability loss each cycle." },
+          { name: "Aegis network", cost: 6, tags: 2, text: "Bring the Defense Grid online." }
+        ]
+      }
+    }.freeze
+
     module_function
 
     def card(key) = CARDS.fetch(key)
     def world(key) = WORLDS.fetch(key)
     def crisis(key) = CRISES.fetch(key)
+    def tech_track(key) = TECH_TRACKS.fetch(key)
 
     def expanded(counts)
       counts.flat_map { |key, count| [ key ] * count }

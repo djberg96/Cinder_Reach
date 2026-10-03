@@ -26,6 +26,13 @@
   <% end %>
 
   <section class="command-strip">
+    <div class="stat orders-stat">
+      <div><span>ORDERS</span><strong><%= @state["orders"] %><small>/<%= @engine.max_orders %></small></strong></div>
+      <div class="order-pips">
+        <% 1.upto(@engine.max_orders) do |n| %><i class="<%= 'filled' if n <= @state['orders'] %>">◆</i><% end %>
+      </div>
+      <small>ONE PER CARD</small>
+    </div>
     <div class="stat stability-stat">
       <div class="stat-heading"><span>STABILITY</span><strong><%= @state["stability"] %><small>/8</small></strong></div>
       <div class="segmented-meter stability-meter">
@@ -93,16 +100,17 @@
 
   <% if @state["phase"] == "survey_decision" && !@state["pending_effect"] %>
     <% surveyed = world_data(@state["surveyed_world"]) %>
+    <% colony_cost = effective_colony_cost(@state, @state["surveyed_world"]) %>
     <section class="decision-panel colony-decision">
       <span class="decision-icon">⌂</span>
-      <div class="decision-copy"><span class="micro-label">SURVEY COMPLETE</span><h2><%= surveyed[:name] %> is within reach.</h2><p>Colonization costs <b><%= surveyed[:colony] %> Supply</b>. You have <%= @state["supply"] %>.</p></div>
+      <div class="decision-copy"><span class="micro-label">SURVEY COMPLETE</span><h2><%= surveyed[:name] %> is within reach.</h2><p>Colonization costs <b><%= colony_cost %> Supply</b>. You have <%= @state["supply"] %>.</p></div>
       <div class="decision-actions">
         <%= button_to "Leave orbit", pass_colony_game_path(@game), class: "secondary-button" %>
         <% if @state["surveyed_world"] == "black_relay" %>
-          <%= button_to "Colonize · Grid online", colonize_game_path(@game, relay_choice: "grid"), class: "primary-button", disabled: @state["supply"] < surveyed[:colony] %>
-          <%= button_to "Colonize · Fleet −1", colonize_game_path(@game, relay_choice: "fleet"), class: "primary-button", disabled: @state["supply"] < surveyed[:colony] %>
+          <%= button_to "Colonize · Grid online", colonize_game_path(@game, relay_choice: "grid"), class: "primary-button", disabled: @state["supply"] < colony_cost %>
+          <%= button_to "Colonize · Fleet −1", colonize_game_path(@game, relay_choice: "fleet"), class: "primary-button", disabled: @state["supply"] < colony_cost %>
         <% else %>
-          <%= button_to(@state["supply"] >= surveyed[:colony] ? "Colonize · #{surveyed[:colony]}" : "Need #{surveyed[:colony]} Supply", colonize_game_path(@game), class: "primary-button", disabled: @state["supply"] < surveyed[:colony]) %>
+          <%= button_to(@state["supply"] >= colony_cost ? "Colonize · #{colony_cost}" : "Need #{colony_cost} Supply", colonize_game_path(@game), class: "primary-button", disabled: @state["supply"] < colony_cost) %>
         <% end %>
       </div>
     </section>
@@ -168,22 +176,27 @@
         <% end %>
       </div>
 
-      <section class="played-zone <%= 'is-empty' if @state['played'].empty? %>">
-        <div class="played-heading">
-          <div><span class="micro-label">ON THE TABLE</span><h2>Played this cycle</h2></div>
-          <div class="table-supply"><span>SUPPLY</span><strong><%= @state["supply"] %></strong></div>
-        </div>
-        <div class="played-row">
-          <% if @state["played"].any? %>
-            <% @state["played"].each do |key| %><%= render "played_card", card_key: key %><% end %>
-          <% else %>
-            <div class="played-placeholder"><span>↓</span> Cards you play will stay here until the crisis is resolved.</div>
-          <% end %>
-        </div>
-      </section>
+      <div class="strategy-row">
+        <%= render "technology" %>
+
+        <section class="played-zone <%= 'is-empty' if @state['played'].empty? %>">
+          <div class="played-heading">
+            <div><span class="micro-label">ON THE TABLE</span><h2>Played this cycle</h2></div>
+            <div class="table-supply"><span>SUPPLY</span><strong><%= @state["supply"] %></strong></div>
+          </div>
+          <div class="played-row">
+            <% if @state["played"].any? %>
+              <% @state["played"].each do |key| %><%= render "played_card", card_key: key %><% end %>
+            <% else %>
+              <div class="played-placeholder"><span>↓</span> Played cards stay here through the crisis.</div>
+            <% end %>
+          </div>
+        </section>
+      </div>
     </section>
 
     <aside class="mission-sidebar">
+      <%= render "incoming_crisis" %>
       <%= render "turn_guide" %>
 
       <details class="sidebar-drawer mandate-drawer">
@@ -221,7 +234,7 @@
     <% if @state["hand"].any? %>
       <div class="card-row hand-row">
         <% @state["hand"].each_with_index do |key, index| %>
-          <%= render "card", card_key: key, index: index, playable: @state["phase"] == "play", disabled: @state["pending_effect"].present? %>
+          <%= render "card", card_key: key, index: index, playable: @state["phase"] == "play", disabled: @state["pending_effect"].present? || @state["orders"] <= 0 %>
         <% end %>
       </div>
       <% if @state["phase"] == "play" && !@state["pending_effect"] %>

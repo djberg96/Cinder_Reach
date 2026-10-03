@@ -24,6 +24,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".world-card", 3
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 5
+    assert_select ".incoming-crisis", 1
+    assert_select ".tech-track", 3
   end
 
   test "playing a card moves it onto the table and updates guidance" do
@@ -36,8 +38,21 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".played-card", 1
     assert_select ".played-card h3", played_name
-    assert_select ".turn-guide h2", "Choose one action"
+    assert_select ".turn-guide h2", "Commit your turn"
     assert_select ".guide-supply strong", game.reload.state["supply"].to_s
     assert_select ".hand-row .card-hit-form", 4
+  end
+
+  test "researching a technology updates its track" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["played"] = [ "colonist" ]
+    state["supply"] = 2
+    game.update!(state: state)
+
+    post research_game_path(game), params: { track: "industry" }
+
+    assert_redirected_to game_path(game)
+    assert_equal 1, game.reload.state.dig("tech", "industry")
   end
 end

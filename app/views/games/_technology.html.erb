@@ -1,0 +1,33 @@
+<section class="technology-console">
+  <div class="technology-heading">
+    <div><span class="micro-label">ARK-9 DEVELOPMENT</span><h2>Technology</h2></div>
+    <span>Research is a main action</span>
+  </div>
+
+  <div class="tech-tracks">
+    <% CinderReach::Catalog::TECH_TRACKS.each do |track_key, track| %>
+      <% level = @engine.tech_level(track_key) %>
+      <% upgrade = track[:levels][level] %>
+      <% matching_tags = @engine.tags.count { |tag| track[:tags].include?(tag) } %>
+      <% actionable = upgrade && @state["phase"] == "play" && !@state["pending_effect"] && @state["supply"] >= upgrade[:cost] && matching_tags >= upgrade[:tags] %>
+      <article class="tech-track tech-<%= track_key %> <%= 'is-actionable' if actionable %> <%= 'is-complete' unless upgrade %>">
+        <div class="tech-title">
+          <i><%= track[:symbol] %></i>
+          <div><span><%= track[:name] %></span><strong><%= upgrade ? upgrade[:name] : "Track complete" %></strong></div>
+          <div class="tech-pips" aria-label="Level <%= level %> of 3">
+            <% 1.upto(3) do |step| %><b class="<%= 'filled' if step <= level %>"><%= step %></b><% end %>
+          </div>
+        </div>
+        <% if upgrade %>
+          <p><%= upgrade[:text] %></p>
+          <div class="tech-requirement">
+            <span><%= matching_tags %>/<%= upgrade[:tags] %> <%= track[:tags].join(" or ") %></span>
+            <%= button_to "RESEARCH · #{upgrade[:cost]}", research_game_path(@game, track: track_key), disabled: !actionable, class: "tech-button" %>
+          </div>
+        <% else %>
+          <p>Every system in this doctrine is online.</p>
+        <% end %>
+      </article>
+    <% end %>
+  </div>
+</section>

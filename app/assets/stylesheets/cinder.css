@@ -278,7 +278,7 @@ body { background:#aeb6ae; }
 .card-action-label,.world-action-label { display:flex; min-height:30px; align-items:center; justify-content:center; position:relative; z-index:2; margin:auto 9px 9px; border:1px solid #7b8983; border-radius:2px; color:var(--muted); background:#e5e5dc; font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; }
 .world-action-label { min-height:27px; margin:3px 0 0; border-color:#9a847a; color:#806358; background:#e7ddd5; }
 .game-card.is-actionable,.world-card.is-actionable { border-color:#2c746c; box-shadow:0 4px 0 #527c74,0 0 0 2px rgba(59,139,129,.2),0 9px 18px rgba(35,65,59,.2); }
-.game-card.is-actionable:before,.world-card.is-actionable:before { content:"AVAILABLE"; position:absolute; z-index:4; top:5px; left:50%; padding:2px 6px; color:#fff; border-radius:8px; background:#277970; font-family:var(--mono); font-size:7px; font-weight:600; letter-spacing:.08em; transform:translateX(-50%); }
+.game-card.is-actionable:after,.world-card.is-actionable:after { content:""; position:absolute; z-index:4; top:0; right:0; width:18px; height:18px; pointer-events:none; background:linear-gradient(225deg,#277970 0 50%,transparent 51%); }
 .game-card.is-actionable:hover,.game-card.is-actionable:focus-within,.world-card.is-actionable:hover,.world-card.is-actionable:focus-within { border-color:#195f58; box-shadow:0 5px 0 #3f6b64,0 0 0 3px rgba(45,135,124,.28),0 14px 25px rgba(30,52,47,.25); }
 .game-card.is-actionable .card-action-label,.world-card.is-actionable .world-action-label { color:#fff; border-color:#226a62; background:#277970; }
 .reach-row .game-card.is-disabled,.world-row .world-card.is-disabled { opacity:.63; filter:saturate(.55); }

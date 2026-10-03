@@ -1,6 +1,7 @@
 <% data = card_data(card_key) %>
 <% playable = local_assigns.fetch(:playable, false) %>
-<article class="game-card card-<%= card_tone(data[:tag]) %> <%= 'is-disabled' if local_assigns[:disabled] %>">
+<% actionable = (playable || local_assigns[:buyable]) && !local_assigns[:disabled] %>
+<article class="game-card card-<%= card_tone(data[:tag]) %> <%= 'is-disabled' if local_assigns[:disabled] %> <%= 'is-actionable' if actionable %>">
   <div class="card-sigil" aria-hidden="true"><%= tag_symbol(data[:tag]) || "×" %></div>
   <header>
     <div>
@@ -17,8 +18,10 @@
     <p><%= data[:text] %></p>
   </div>
   <% if playable %>
-    <%= button_to "Play card", play_card_game_path(@game, card_index: local_assigns[:index]), class: "card-action", disabled: local_assigns[:disabled] %>
+    <span class="card-action-label"><%= local_assigns[:disabled] ? "WAITING" : "PLAY · +#{data[:supply]} SUPPLY" %></span>
+    <%= button_to "", play_card_game_path(@game, card_index: local_assigns[:index]), class: "card-hit-area", disabled: local_assigns[:disabled], form: { class: "card-hit-form" }, aria: { label: "Play #{data[:name]} for #{data[:supply]} Supply" } %>
   <% elsif local_assigns[:buyable] %>
-    <%= button_to(local_assigns[:disabled] ? "Need #{cost}" : "Acquire · #{cost}", buy_game_path(@game, slot: local_assigns[:index]), class: "card-action", disabled: local_assigns[:disabled]) %>
+    <span class="card-action-label"><%= local_assigns[:disabled] ? "COST #{cost}" : "BUY · #{cost} SUPPLY" %></span>
+    <%= button_to "", buy_game_path(@game, slot: local_assigns[:index]), class: "card-hit-area", disabled: local_assigns[:disabled], form: { class: "card-hit-form" }, aria: { label: "Buy #{data[:name]} for #{cost} Supply" } %>
   <% end %>
 </article>

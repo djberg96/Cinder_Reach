@@ -25,4 +25,19 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 5
   end
+
+  test "playing a card moves it onto the table and updates guidance" do
+    game = CinderReach::Engine.start!
+    played_name = CinderReach::Catalog.card(game.state["hand"].first)[:name]
+
+    post play_card_game_path(game), params: { card_index: 0 }
+    assert_redirected_to game_path(game)
+    follow_redirect!
+
+    assert_select ".played-card", 1
+    assert_select ".played-card h3", played_name
+    assert_select ".turn-guide h2", "Choose one action"
+    assert_select ".guide-supply strong", game.reload.state["supply"].to_s
+    assert_select ".hand-row .card-hit-form", 4
+  end
 end

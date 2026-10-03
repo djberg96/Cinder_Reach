@@ -1,0 +1,56 @@
+<section class="turn-guide guide-<%= @state['phase'] %>">
+  <span class="guide-step">
+    <% if @state["phase"] == "play" %>
+      <%= @state["played"].empty? ? "YOUR TURN · START HERE" : "YOUR TURN · MAIN ACTION" %>
+    <% elsif @state["phase"] == "survey_decision" %>
+      SURVEY COMPLETE
+    <% elsif @state["phase"] == "crisis" %>
+      SYSTEM RESPONSE
+    <% elsif @state["phase"] == "cleanup" %>
+      END OF CYCLE
+    <% else %>
+      RUN COMPLETE
+    <% end %>
+  </span>
+
+  <% if @state["phase"] == "play" && @state["pending_effect"].present? %>
+    <span class="guide-icon">⌁</span>
+    <h2>Resolve the signal</h2>
+    <p>Finish the highlighted card effect before continuing your turn.</p>
+  <% elsif @state["phase"] == "play" && @state["played"].empty? %>
+    <span class="guide-icon">↓</span>
+    <h2>Play a card</h2>
+    <p>Click a card in your hand. It will move to the table and add its Supply.</p>
+    <div class="guide-tip"><i></i>Your hand is highlighted below.</div>
+    <%= button_to "Play every card", play_all_game_path(@game), class: "secondary-button guide-button" if @state["hand"].any? %>
+  <% elsif @state["phase"] == "play" %>
+    <span class="guide-icon">◇</span>
+    <h2>Choose one action</h2>
+    <p>You may keep playing cards, or spend your Supply on one main action.</p>
+    <div class="guide-supply"><span>AVAILABLE SUPPLY</span><strong><%= @state["supply"] %></strong></div>
+    <ul class="action-key">
+      <li><i>1</i><span><b>Buy</b> a glowing Reach card</span></li>
+      <li><i>2</i><span><b>Survey</b> a glowing world</span></li>
+      <li><i>3</i><span><b>Purge</b> from the hand tray</span></li>
+    </ul>
+    <%= button_to "Play remaining cards", play_all_game_path(@game), class: "secondary-button guide-button" if @state["hand"].any? %>
+  <% elsif @state["phase"] == "survey_decision" %>
+    <span class="guide-icon">⌂</span>
+    <h2>Colonize or leave</h2>
+    <p>Your survey is complete. Use the focused decision above the table.</p>
+    <div class="guide-supply"><span>SUPPLY REMAINING</span><strong><%= @state["supply"] %></strong></div>
+  <% elsif @state["phase"] == "crisis" %>
+    <span class="guide-icon danger-icon">!</span>
+    <h2>Resolve the crisis</h2>
+    <p>Your played cards remain on the table. Their tags may protect the colony.</p>
+  <% elsif @state["phase"] == "cleanup" %>
+    <span class="guide-icon">↻</span>
+    <h2>Cycle complete</h2>
+    <p>Played and unplayed cards will discard. Unspent Supply is lost.</p>
+    <%= button_to(@state["cycle"] == 10 ? "Score mandate →" : "Begin cycle #{@state['cycle'] + 1} →", cleanup_game_path(@game), class: "primary-button guide-button") %>
+  <% else %>
+    <span class="guide-icon">✦</span>
+    <h2>Run complete</h2>
+    <p>The final mandate report is shown above the table.</p>
+  <% end %>
+</section>

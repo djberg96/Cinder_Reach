@@ -1,6 +1,7 @@
 <% data = world_data(world_key) %>
 <% survey_cost = effective_survey_cost(@state, world_key) %>
-<article class="world-card world-<%= world_key.dasherize %> <%= 'is-surveyed' if @state['surveyed_world'] == world_key %>">
+<% survey_disabled = @state["supply"] < survey_cost || @state["pending_effect"].present? %>
+<article class="world-card world-<%= world_key.dasherize %> <%= 'is-surveyed' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if survey_disabled %> <%= 'is-actionable' if @state['phase'] == 'play' && !survey_disabled %>">
   <div class="world-art" aria-hidden="true"><span class="world-sphere"></span></div>
   <div class="world-content">
     <span class="micro-label">UNCHARTED WORLD</span>
@@ -11,7 +12,8 @@
       <div><dt>Colonize <b><%= data[:colony] %></b></dt><dd><%= data[:colony_text] %></dd></div>
     </dl>
     <% if @state["phase"] == "play" %>
-      <%= button_to(@state["supply"] >= survey_cost ? "Survey world" : "Need #{survey_cost} Supply", survey_game_path(@game, slot: index), class: "world-action", disabled: @state["supply"] < survey_cost || @state["pending_effect"].present?) %>
+      <span class="world-action-label"><%= survey_disabled ? "SURVEY COST #{survey_cost}" : "SURVEY · #{survey_cost} SUPPLY" %></span>
+      <%= button_to "", survey_game_path(@game, slot: index), class: "world-hit-area", disabled: survey_disabled, form: { class: "world-hit-form" }, aria: { label: "Survey #{data[:name]} for #{survey_cost} Supply" } %>
     <% end %>
   </div>
 </article>

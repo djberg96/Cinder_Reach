@@ -1,0 +1,10 @@
+<% data = card_data(card_key) %>
+<article class="played-card played-<%= card_tone(data[:tag]) %>">
+  <span class="played-sigil"><%= tag_symbol(data[:tag]) || "×" %></span>
+  <div>
+    <span class="card-kind">PLAYED</span>
+    <h3><%= data[:name] %></h3>
+    <% if data[:tag] %><span class="tag tag-<%= data[:tag].downcase %>"><%= tag_symbol(data[:tag]) %> <%= data[:tag] %></span><% end %>
+  </div>
+  <strong>+<%= data[:supply] %><small> SUPPLY</small></strong>
+</article>

@@ -1,0 +1,61 @@
+<% content_for :title, "Cinder Reach — Solo Deck-Builder" %>
+
+<main class="landing-shell">
+  <section class="landing-hero">
+    <div class="eyebrow"><span></span> ARK-9 / GOVERNOR'S TERMINAL <span></span></div>
+    <h1>CINDER<br><em>REACH</em></h1>
+    <p class="dispatch">Ten cycles. One dying beacon. A fleet moving through the dark.</p>
+    <p class="premise">Build your colony deck, survey strange worlds, keep the council together, and prepare for the landing before time runs out.</p>
+
+    <% if @current_game %>
+      <div class="continue-panel">
+        <div>
+          <span class="micro-label">ACTIVE TRANSMISSION</span>
+          <strong>Cycle <%= [@current_game.state["cycle"], 10].min %> · <%= @current_game.difficulty.titleize %> protocol</strong>
+        </div>
+        <%= link_to @current_game.status == "playing" ? "Continue run" : "Review run", game_path(@current_game), class: "primary-button" %>
+      </div>
+    <% end %>
+
+    <div class="new-run">
+      <h2>Issue a new mandate</h2>
+      <%= form_with url: games_path, class: "difficulty-form" do |form| %>
+        <label class="difficulty-option">
+          <%= form.radio_button :difficulty, "prospect" %>
+          <span class="difficulty-card">
+            <span class="difficulty-top"><b>Prospect</b><small>Forgiving</small></span>
+            <span>Begin with 6 Stability. Learn the shape of the Reach.</span>
+          </span>
+        </label>
+        <label class="difficulty-option">
+          <%= form.radio_button :difficulty, "mandate", checked: true %>
+          <span class="difficulty-card featured">
+            <span class="difficulty-top"><b>Mandate</b><small>Standard</small></span>
+            <span>The intended experience. Begin with 5 Stability.</span>
+          </span>
+        </label>
+        <label class="difficulty-option">
+          <%= form.radio_button :difficulty, "silent" %>
+          <span class="difficulty-card">
+            <span class="difficulty-top"><b>Silent</b><small>Severe</small></span>
+            <span>Fleet begins at 1. The first signal is already inbound.</span>
+          </span>
+        </label>
+        <%= form.submit "Begin expedition  →", class: "primary-button launch-button" %>
+      <% end %>
+    </div>
+
+    <div class="landing-footer">
+      <span>SOLO DECK-BUILDER</span><i></i><span>20–30 MINUTES</span><i></i><span>10 CYCLES</span>
+    </div>
+  </section>
+
+  <aside class="planet-window" aria-hidden="true">
+    <div class="orbit orbit-one"></div>
+    <div class="orbit orbit-two"></div>
+    <div class="planet"><div class="planet-glow"></div></div>
+    <div class="ship ship-one">✦</div>
+    <div class="ship ship-two">·</div>
+    <div class="coordinate">CR-09<br>41.072° N<br>BEACON: WEAK</div>
+  </aside>
+</main>

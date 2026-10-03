@@ -1,0 +1,17 @@
+<% data = world_data(world_key) %>
+<% survey_cost = effective_survey_cost(@state, world_key) %>
+<article class="world-card world-<%= world_key.dasherize %> <%= 'is-surveyed' if @state['surveyed_world'] == world_key %>">
+  <div class="world-art" aria-hidden="true"><span class="world-sphere"></span></div>
+  <div class="world-content">
+    <span class="micro-label">UNCHARTED WORLD</span>
+    <h3><%= data[:name] %></h3>
+    <p class="world-flavor"><%= data[:flavor] %></p>
+    <dl>
+      <div><dt>Survey <b><%= survey_cost %></b></dt><dd><%= data[:survey_text] %></dd></div>
+      <div><dt>Colonize <b><%= data[:colony] %></b></dt><dd><%= data[:colony_text] %></dd></div>
+    </dl>
+    <% if @state["phase"] == "play" %>
+      <%= button_to(@state["supply"] >= survey_cost ? "Survey world" : "Need #{survey_cost} Supply", survey_game_path(@game, slot: index), class: "world-action", disabled: @state["supply"] < survey_cost || @state["pending_effect"].present?) %>
+    <% end %>
+  </div>
+</article>

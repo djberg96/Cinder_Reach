@@ -60,4 +60,19 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to game_path(game)
     assert_equal 1, game.reload.state.dig("tech", "industry")
   end
+
+  test "a charted world is presented as a colonization target" do
+    game = CinderReach::Engine.start!
+    world_key = game.state["system"].first
+    state = game.state
+    state["surveyed_worlds"] = [ world_key ]
+    state["supply"] = 10
+    game.update!(state: state)
+
+    get game_path(game)
+
+    assert_response :success
+    assert_select ".world-card.is-surveyed .micro-label", "SURVEYED WORLD"
+    assert_select ".world-card.is-surveyed .world-action-label", /COLONIZE/
+  end
 end

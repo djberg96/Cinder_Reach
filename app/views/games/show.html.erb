@@ -103,7 +103,7 @@
     <% colony_cost = effective_colony_cost(@state, @state["surveyed_world"]) %>
     <section class="decision-panel colony-decision">
       <span class="decision-icon">⌂</span>
-      <div class="decision-copy"><span class="micro-label">SURVEY COMPLETE</span><h2><%= surveyed[:name] %> is within reach.</h2><p>Colonization costs <b><%= colony_cost %> Supply</b>. You have <%= @state["supply"] %>.</p></div>
+      <div class="decision-copy"><span class="micro-label"><%= @state["surveyed_this_action"] ? "SURVEY COMPLETE" : "CHARTED WORLD" %></span><h2><%= surveyed[:name] %> is within reach.</h2><p>Colonization costs <b><%= colony_cost %> Supply</b>. You have <%= @state["supply"] %>.</p></div>
       <div class="decision-actions">
         <%= button_to "Leave orbit", pass_colony_game_path(@game), class: "secondary-button" %>
         <% if @state["surveyed_world"] == "black_relay" %>

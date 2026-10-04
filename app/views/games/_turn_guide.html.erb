@@ -36,7 +36,7 @@
   <% elsif @state["phase"] == "survey_decision" %>
     <span class="guide-icon">⌂</span>
     <h2>Colonize or leave</h2>
-    <p>Your survey is complete. Use the focused decision above the table.</p>
+    <p>This world is permanently surveyed. Colonize now or return on a later cycle without paying the survey cost again.</p>
     <div class="guide-supply"><span>SUPPLY REMAINING</span><strong><%= @state["supply"] %></strong></div>
   <% elsif @state["phase"] == "crisis" %>
     <span class="guide-icon danger-icon">!</span>

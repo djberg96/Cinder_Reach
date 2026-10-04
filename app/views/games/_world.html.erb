@@ -1,19 +1,22 @@
 <% data = world_data(world_key) %>
 <% survey_cost = effective_survey_cost(@state, world_key) %>
-<% survey_disabled = @state["supply"] < survey_cost || @state["pending_effect"].present? %>
-<article class="world-card world-<%= world_key.dasherize %> <%= 'is-surveyed' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if survey_disabled %> <%= 'is-actionable' if @state['phase'] == 'play' && !survey_disabled %>">
+<% charted = @state["surveyed_worlds"].include?(world_key) %>
+<% action_cost = charted ? effective_colony_cost(@state, world_key) : survey_cost %>
+<% action_disabled = @state["supply"] < action_cost || @state["pending_effect"].present? %>
+<article class="world-card world-<%= world_key.dasherize %> <%= 'is-surveyed' if charted %> <%= 'is-selected' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if action_disabled %> <%= 'is-actionable' if @state['phase'] == 'play' && !action_disabled %>">
   <div class="world-art" aria-hidden="true"><span class="world-sphere"></span></div>
   <div class="world-content">
-    <span class="micro-label">UNCHARTED WORLD</span>
+    <span class="micro-label"><%= charted ? "SURVEYED WORLD" : "UNCHARTED WORLD" %></span>
     <h3><%= data[:name] %></h3>
     <p class="world-flavor"><%= data[:flavor] %></p>
     <dl>
-      <div><dt>Survey <b><%= survey_cost %></b></dt><dd><%= data[:survey_text] %></dd></div>
+      <div><dt>Survey <b><%= charted ? "✓" : survey_cost %></b></dt><dd><%= charted ? "Charted · reward claimed" : data[:survey_text] %></dd></div>
       <div><dt>Colonize <b><%= effective_colony_cost(@state, world_key) %></b></dt><dd><%= data[:colony_text] %></dd></div>
     </dl>
     <% if @state["phase"] == "play" %>
-      <span class="world-action-label"><%= survey_disabled ? "SURVEY COST #{survey_cost}" : "SURVEY · #{survey_cost} SUPPLY" %></span>
-      <%= button_to "", survey_game_path(@game, slot: index), class: "world-hit-area", disabled: survey_disabled, form: { class: "world-hit-form" }, aria: { label: "Survey #{data[:name]} for #{survey_cost} Supply" } %>
+      <% action_name = charted ? "COLONIZE" : "SURVEY" %>
+      <span class="world-action-label"><%= action_disabled ? "#{action_name} COST #{action_cost}" : "#{action_name} · #{action_cost} SUPPLY" %></span>
+      <%= button_to "", survey_game_path(@game, slot: index), class: "world-hit-area", disabled: action_disabled, form: { class: "world-hit-form" }, aria: { label: "#{action_name.titleize} #{data[:name]} for #{action_cost} Supply" } %>
     <% end %>
   </div>
 </article>

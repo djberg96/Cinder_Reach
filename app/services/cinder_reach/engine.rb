@@ -23,8 +23,9 @@ module CinderReach
         "deck" => starter.drop(5), "hand" => starter.first(5), "discard" => [], "played" => [], "scrapped" => [],
         "market_deck" => market.drop(4), "reach" => market.first(4),
         "deep" => worlds.drop(3), "system" => worlds.first(3),
+        "surveyed_worlds" => [],
         "crisis_deck" => crises.drop(1), "crisis_discard" => [], "incoming_crisis" => crises.first, "current_crisis" => nil,
-        "phase" => "play", "surveyed_world" => nil, "pending_effect" => nil,
+        "phase" => "play", "surveyed_world" => nil, "surveyed_this_action" => false, "pending_effect" => nil,
         "buy_discount" => 0, "survey_discount" => 0, "vault_discount" => false,
         "intercept_used" => false, "stability_guard_used" => false, "glimpse" => nil,
         "log" => [ "Cycle 1 begins. Incoming signal identified." ], "outcome" => nil
@@ -129,11 +130,26 @@ module CinderReach
       key = state["system"][Integer(index)]
       raise InvalidMove, "That System slot is empty" unless key
       info = world(key)
+
+      if state["surveyed_worlds"].include?(key)
+        colony_cost = effective_colony_cost(key)
+        raise InvalidMove, "You need #{colony_cost} Supply" if state["supply"] < colony_cost
+
+        state["surveyed_world"] = key
+        state["surveyed_this_action"] = false
+        state["phase"] = "survey_decision"
+        log!("Returned to charted #{info[:name]} to establish a colony.")
+        save!
+        return
+      end
+
       cost = effective_survey_cost(key)
       raise InvalidMove, "You need #{cost} Supply" if state["supply"] < cost
 
       state["supply"] -= cost
+      state["surveyed_worlds"] << key
       state["surveyed_world"] = key
+      state["surveyed_this_action"] = true
       state["phase"] = "survey_decision"
       log!("Surveyed #{info[:name]} for #{cost} Supply.")
       case key
@@ -179,7 +195,9 @@ module CinderReach
       state["colonies"] += 1
       slot = state["system"].index(key)
       state["system"][slot] = state["deep"].shift if slot
+      state["surveyed_worlds"].delete(key)
       state["surveyed_world"] = nil
+      state["surveyed_this_action"] = false
       adjust_stability!(1) if key == "rust_mesa"
       scrap_first_unrest!(piles: %w[hand discard]) if key == "pale_garden"
       draw!(1) if key == "vault_orbit"
@@ -219,6 +237,7 @@ module CinderReach
       require_no_pending!
       log!("Left #{world(state['surveyed_world'])[:name]} uncolonized.")
       state["surveyed_world"] = nil
+      state["surveyed_this_action"] = false
       begin_crisis!
       save!
     end
@@ -453,7 +472,12 @@ module CinderReach
     def normalize_state!
       state["tech"] ||= { "expedition" => 0, "industry" => 0, "command" => 0 }
       %w[expedition industry command].each { |track| state["tech"][track] ||= 0 }
+      state["surveyed_worlds"] ||= []
+      if state["surveyed_world"] && !state["surveyed_worlds"].include?(state["surveyed_world"])
+        state["surveyed_worlds"] << state["surveyed_world"]
+      end
       state["orders"] = max_orders if state["orders"].nil?
+      state["surveyed_this_action"] = false if state["surveyed_this_action"].nil?
       state["stability_guard_used"] = false if state["stability_guard_used"].nil?
       unless state.key?("incoming_crisis")
         state["incoming_crisis"] = state["crisis_deck"].shift

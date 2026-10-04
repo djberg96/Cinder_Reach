@@ -15,6 +15,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 19, state["market_deck"].size
     assert_equal 3, state["system"].size
     assert_equal 3, state["deep"].size
+    assert_empty state["surveyed_worlds"]
     assert state["incoming_crisis"].present?
     assert_equal 9, state["crisis_deck"].size
     assert_equal 3, state["orders"]
@@ -118,10 +119,39 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     engine.colonize!
 
     assert_equal 1, engine.state["colonies"]
+    assert_not_includes engine.state["surveyed_worlds"], "rust_mesa"
     assert_equal 6, engine.state["stability"]
     assert_includes engine.state["discard"], "outpost"
     assert_equal [ "glass_sea" ], engine.state["system"]
     assert_equal "crisis", engine.state["phase"]
+  end
+
+  test "a surveyed world stays charted and does not charge or reward twice" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["system"] = [ "pale_garden" ]
+    state["supply"] = 2
+    game.update!(state: state)
+
+    engine = game.engine
+    engine.survey!(0)
+    assert_equal 0, engine.state["supply"]
+    assert_equal 6, engine.state["stability"]
+    assert_includes engine.state["surveyed_worlds"], "pale_garden"
+    engine.pass_colony!
+
+    state = game.state
+    state["phase"] = "play"
+    state["current_crisis"] = nil
+    state["supply"] = 4
+    game.update!(state: state)
+    engine = CinderReach::Engine.new(game)
+    engine.survey!(0)
+
+    assert_equal 4, engine.state["supply"]
+    assert_equal 6, engine.state["stability"]
+    assert_equal "survey_decision", engine.state["phase"]
+    assert_not engine.state["surveyed_this_action"]
   end
 
   test "intercept cancels the first fleet advance from a crisis" do

@@ -18,7 +18,7 @@ Then open <http://localhost:3000>. Runs are saved in SQLite and can be continued
 Each cycle has four phases:
 
 1. Inspect the incoming crisis, then spend one of your three starting Orders per selected card.
-2. Take one main action: buy, survey (and optionally colonize), research, or purge.
+2. Take one main action: buy, survey (and optionally colonize), research, or purge. A surveyed world remains charted, so future visits skip its survey cost and reward.
 3. Resolve the crisis you prepared for. The tags on played cards provide cover.
 4. Clean up, lose unspent Supply, and draw five cards.
 

@@ -544,6 +544,8 @@ body { background:#aeb6ae; }
 .tech-track.is-complete { background:#c8d9d2; }
 .tech-track.is-complete .tech-title>i { color:#fff; border-color:#277970; background:#277970; }
 .phase-crisis .technology-console,.phase-cleanup .technology-console,.phase-survey_decision .technology-console,.has-pending-effect .technology-console { opacity:.68; }
+.board-tableau .section-heading { align-items:center; margin:6px 0 5px; }
+.board-tableau .section-heading h2 { margin:0; }
 .strategy-row { display:grid; grid-template-columns:minmax(390px,.6fr) minmax(0,1.4fr); align-items:stretch; gap:8px; margin-top:8px; }
 .strategy-row .technology-console,.strategy-row .played-zone { margin-top:0; }
 .strategy-row .played-zone { display:flex; min-width:0; flex-direction:column; }
@@ -552,8 +554,6 @@ body { background:#aeb6ae; }
 
 @media(min-width:1500px){
   .board-tableau { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); align-items:start; gap:12px; }
-  .board-tableau .section-heading { margin-top:9px; }
-  .board-tableau .reach-heading { margin-top:9px; }
   .board-tableau .world-row { gap:7px; }
   .board-tableau .world-card { min-height:225px; grid-template-columns:34% 66%; }
   .board-tableau .world-sphere { width:145px; top:37px; left:-49px; }

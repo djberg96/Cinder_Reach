@@ -37,6 +37,10 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".deck-pile[data-hand-deal-target='deck']", 1
     assert_select ".dealt-card[data-hand-deal-target='card']", 6
     assert_select ".board-tableau .tableau-panel", 2
+    assert_select ".worlds-panel .section-heading h2", "Worlds in reach"
+    assert_select ".market-panel .section-heading h2", "Market"
+    assert_select ".worlds-panel .section-heading .micro-label", 0
+    assert_select ".market-panel .section-heading .micro-label", 0
     assert_select ".strategy-row .technology-console", 1
     assert_select ".strategy-row .played-zone", 1
     assert_select ".command-slot", 2

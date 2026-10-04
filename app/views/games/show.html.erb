@@ -71,11 +71,18 @@
       <small><%= @state["held"] ? "LANDING HELD" : "INVASION AT 5" %></small>
     </div>
     <div class="stat colony-stat">
-      <span>COLONIES</span>
-      <div class="colony-pips">
-        <% 1.upto(4) do |n| %><i class="<%= 'filled' if n <= @state['colonies'] %>">⌂</i><% end %>
+      <div class="colony-heading">
+        <span>COLONIES</span>
+        <strong><%= @state["colonies"] %><small>/4</small></strong>
       </div>
-      <small><%= @state["colonies"] %>/4 · LOCK AT 4</small>
+      <div class="colony-pips" data-count="<%= @state['colonies'] %>" aria-label="<%= @state['colonies'] %> of 4 colonies; the fourth locks the beacon">
+        <% 1.upto(4) do |n| %>
+          <i class="<%= 'filled' if n <= @state['colonies'] %> <%= 'is-goal' if n == 4 %>">
+            <span><%= n <= @state["colonies"] ? "⌂" : n == 4 ? "⌾" : n %></span>
+            <% if n == 4 %><small>LOCK</small><% end %>
+          </i>
+        <% end %>
+      </div>
     </div>
     <div class="stat grid-stat <%= 'online' if @state['grid'] %>">
       <span class="grid-glyph">⌬</span>
@@ -214,8 +221,6 @@
             <div class="table-controls">
               <% if @state["phase"] == "action" %>
                 <%= button_to(@state["watch"] == 1 ? "End Watch I →" : "Face crisis →", end_actions_game_path(@game), class: "#{@state['watch'] == 1 ? 'secondary-button' : 'danger-button'} table-phase-button") %>
-              <% elsif @state["phase"] == "cleanup" %>
-                <%= button_to(@state["cycle"] == 10 ? "Score mandate →" : "Begin cycle #{@state['cycle'] + 1} →", cleanup_game_path(@game), class: "primary-button table-phase-button") %>
               <% end %>
               <div class="table-resources"><span>SUPPLY <b><%= @state["supply"] %></b></span><span>DATA <b><%= @state["data"] %></b></span></div>
             </div>
@@ -284,6 +289,12 @@
         </div>
         <footer><span>CRISIS RESOLVES</span><b><%= @state["watch"] == 1 ? "AFTER WATCH II" : "AFTER THIS WATCH" %></b></footer>
       </section>
+      <% if @state["phase"] == "cleanup" %>
+        <%= button_to cleanup_game_path(@game), class: "primary-button mission-advance-button", form: { class: "mission-advance-form" } do %>
+          <span><small><%= @state["cycle"] == 10 ? "FINAL RESOLUTION" : "MISSION CONTINUES" %></small><b><%= @state["cycle"] == 10 ? "SCORE MANDATE" : "BEGIN CYCLE #{@state['cycle'] + 1}" %></b></span>
+          <i>→</i>
+        <% end %>
+      <% end %>
     </aside>
   </div>
 

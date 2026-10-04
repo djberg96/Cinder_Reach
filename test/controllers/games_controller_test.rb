@@ -25,6 +25,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".mission-sidebar .cycle-panel", 1
     assert_select ".cycle-pip", 10
     assert_select ".watch-marker.active", 1
+    assert_select ".colony-pips[data-count='0']", 1
+    assert_select ".colony-pips .is-goal", text: /LOCK/, count: 1
     assert_select ".world-card", 3
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 6
@@ -91,6 +93,21 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to game_path(game)
     assert_includes game.reload.state["unlocked_tech"], "ind_salvage"
+  end
+
+  test "cleanup continuation sits below the mission clock" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "cleanup"
+    state["watch"] = 2
+    game.update!(state: state)
+
+    get game_path(game)
+
+    assert_response :success
+    assert_select ".mission-sidebar .cycle-panel + .mission-advance-form", 1
+    assert_select ".mission-advance-button", /BEGIN CYCLE 2/
+    assert_select ".played-zone .mission-advance-button", 0
   end
 
   test "a charted world is presented as a colonization target" do

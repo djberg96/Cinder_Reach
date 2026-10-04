@@ -1,1 +1,7 @@
 tmp/*
+
+# Rails runtime data belongs to each local environment, not the repository.
+/log/*
+!/log/.keep
+/storage/*
+!/storage/.keep

@@ -146,8 +146,18 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to root_path
     follow_redirect!
-    assert_select ".flash", /permanently deleted/i
+    assert_select ".flash-stack[role='status'][aria-live='polite'] .flash span", /permanently deleted/i
     assert_select ".continue-panel", 0
+  end
+
+  test "the landing save slot offers continue and delete controls" do
+    game = CinderReach::Engine.start!
+    get game_path(game)
+    get root_path
+
+    assert_response :success
+    assert_select ".continue-actions a", "Continue run"
+    assert_select ".continue-actions form[data-turbo-confirm*='cannot be undone'] .danger-text-button", "Delete run"
   end
 
   test "signal analysis previews the following crisis" do

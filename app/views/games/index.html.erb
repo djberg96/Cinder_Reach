@@ -2,8 +2,8 @@
 
 <main class="landing-shell">
   <% if flash.any? %>
-    <div class="flash-stack">
-      <% flash.each do |type, message| %><div class="flash flash-<%= type %>"><%= message %></div><% end %>
+    <div class="flash-stack" role="status" aria-live="polite">
+      <% flash.each do |type, message| %><div class="flash flash-<%= type %>"><span><%= message %></span></div><% end %>
     </div>
   <% end %>
 
@@ -15,11 +15,14 @@
 
     <% if @current_game %>
       <div class="continue-panel">
-        <div>
+        <div class="continue-copy">
           <span class="micro-label">ACTIVE TRANSMISSION</span>
           <strong>Cycle <%= [@current_game.state["cycle"], @current_game.state["cycle_limit"] || 10].min %> · <%= @current_game.difficulty.titleize %> protocol</strong>
         </div>
-        <%= link_to @current_game.status == "playing" ? "Continue run" : "Review run", game_path(@current_game), class: "primary-button" %>
+        <div class="continue-actions">
+          <%= link_to @current_game.status == "playing" ? "Continue run" : "Review run", game_path(@current_game), class: "primary-button" %>
+          <%= button_to "Delete run", game_path(@current_game), method: :delete, class: "text-button danger-text-button", form: { data: { turbo_confirm: "Permanently delete this run? This cannot be undone." } } %>
+        </div>
       </div>
     <% end %>
 

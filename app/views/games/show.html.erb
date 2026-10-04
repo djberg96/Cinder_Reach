@@ -204,10 +204,6 @@
     <section class="board-main <%= 'awaiting-first-card' if @state['phase'] == 'command' && @state['played'].empty? %>">
       <div class="board-tableau">
         <section class="tableau-panel worlds-panel">
-          <div class="section-heading">
-            <h2>Worlds in reach</h2>
-            <span class="deck-count"><b><%= @state["deep"].length %></b> WORLDS UNCHARTED</span>
-          </div>
           <div class="world-row">
             <div class="world-lane-label inner-lane">
               <span><i>●</i><b>Inner Reach</b></span>
@@ -224,10 +220,6 @@
         </section>
 
         <section class="tableau-panel market-panel">
-          <div class="section-heading reach-heading">
-            <h2>Market</h2>
-            <span class="deck-count"><b><%= @state["market_deck"].length %></b> CARDS REMAIN</span>
-          </div>
           <div class="card-row reach-row">
             <% @state["reach"].each_with_index do |key, index| %>
               <% next unless key %>
@@ -235,6 +227,10 @@
               <%= render "card", card_key: key, cost: cost, index: index, buyable: @state["phase"] == "action", disabled: @state["supply"] < cost || @state["pending_effect"].present? %>
             <% end %>
           </div>
+          <footer class="market-footer">
+            <h2>Market</h2>
+            <span class="deck-count"><b><%= @state["market_deck"].length %></b> CARDS REMAIN</span>
+          </footer>
         </section>
       </div>
 

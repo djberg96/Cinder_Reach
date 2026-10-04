@@ -288,15 +288,15 @@
   </div>
 
   <% if @state["phase"] == "command" %>
-  <section class="hand-zone is-current-focus">
+  <section class="hand-zone is-current-focus" data-controller="hand-deal" data-hand-deal-key-value="<%= @game.id %>:<%= @state['cycle'] %>:<%= @state['watch'] %>">
     <div class="section-heading hand-heading">
       <div><span class="micro-label">GOVERNOR'S HAND</span><h2>Your cards <small><%= @state["hand"].length %></small></h2></div>
-      <div class="pile-readout"><span>DECK <b><%= @state["deck"].length %></b></span><span>DISCARD <b><%= @state["discard"].length %></b></span></div>
+      <div class="pile-readout"><span class="deck-pile" data-hand-deal-target="deck">DECK <b><%= @state["deck"].length %></b></span><span>DISCARD <b><%= @state["discard"].length %></b></span></div>
     </div>
     <% if @state["hand"].any? %>
       <div class="card-row hand-row">
         <% @state["hand"].each_with_index do |key, index| %>
-          <%= render "card", card_key: key, index: index, playable: true, disabled: @state["pending_effect"].present? %>
+          <div class="dealt-card" data-hand-deal-target="card"><%= render "card", card_key: key, index: index, playable: true, disabled: @state["pending_effect"].present? %></div>
         <% end %>
       </div>
     <% else %>

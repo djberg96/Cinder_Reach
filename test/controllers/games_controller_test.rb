@@ -28,6 +28,9 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".world-card", 3
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 6
+    assert_select ".hand-zone[data-controller='hand-deal']", 1
+    assert_select ".deck-pile[data-hand-deal-target='deck']", 1
+    assert_select ".dealt-card[data-hand-deal-target='card']", 6
     assert_select ".board-tableau .tableau-panel", 2
     assert_select ".strategy-row .technology-console", 1
     assert_select ".strategy-row .played-zone", 1
@@ -47,6 +50,9 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tech-tab-radio[checked]", 1
     assert_select ".tech-branch", 4
     assert_select ".tech-node", 20
+    assert_select ".tech-node-requirement", /NEEDS A MATCHING COMMAND/
+    assert_select ".tech-node-requirement small", /SURVEY OR LAB/
+    assert_select ".tech-node-requirement", text: /No prerequisite/, count: 0
   end
 
   test "playing a card moves it into the next command slot" do

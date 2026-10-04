@@ -51,14 +51,32 @@
                   <% available = @engine.tech_available?(node[:key]) %>
                   <% matching_tags = @engine.matching_tech_tags(node[:key]) %>
                   <% cost = @engine.effective_research_cost(node[:key]) %>
+                  <% missing_tags = [node[:tags] - matching_tags, 0].max %>
+                  <% command_types = tree[:tags].join(" OR ") %>
                   <% actionable = available && @state["phase"] == "action" && !@state["pending_effect"] && @state["data"] >= cost && matching_tags >= node[:tags] %>
-                  <article class="tech-node <%= 'is-unlocked' if unlocked %> <%= 'is-available' if available %> <%= 'is-actionable' if actionable %>">
+                  <article class="tech-node <%= 'is-unlocked' if unlocked %> <%= 'is-available' if available %> <%= 'is-actionable' if actionable %>" data-parent="<%= node[:parent] %>">
                     <div class="tech-node-top"><span><%= unlocked ? "ONLINE" : node[:parent] ? "BRANCH" : "FOUNDATION" %></span><b><%= node[:cost] %>D</b></div>
                     <h4><%= node[:name] %></h4>
                     <p><%= node[:text] %></p>
                     <% unless unlocked %>
-                      <div class="tech-node-requirement"><span><%= matching_tags %>/<%= node[:tags] %> TAGS</span><%= node[:parent] ? "Requires #{CinderReach::Catalog.tech_node(node[:parent])[:name]}" : "No prerequisite" %></div>
-                      <%= button_to(actionable ? "RESEARCH · #{cost} DATA" : "LOCKED · #{cost} DATA", research_game_path(@game, tech: node[:key]), disabled: !actionable, class: "tech-button") %>
+                      <div class="tech-node-requirement <%= 'is-met' if missing_tags.zero? %>">
+                        <span><%= missing_tags.zero? ? "COMMAND READY" : missing_tags == 1 ? "NEEDS A MATCHING COMMAND" : "NEEDS #{missing_tags} MATCHING COMMANDS" %></span>
+                        <small><%= command_types %></small>
+                      </div>
+                      <% button_label = if actionable
+                        "RESEARCH · #{cost} DATA"
+                      elsif !available
+                        "LOCKED"
+                      elsif missing_tags.positive?
+                        missing_tags == 1 ? "NEED #{command_types} COMMAND" : "NEED #{missing_tags} #{command_types} COMMANDS"
+                      elsif @state["data"] < cost
+                        "NEED #{cost} DATA"
+                      elsif @state["phase"] != "action"
+                        "RESEARCH DURING ACTIONS"
+                      else
+                        "RESOLVE CURRENT EFFECT"
+                      end %>
+                      <%= button_to(button_label, research_game_path(@game, tech: node[:key]), disabled: !actionable, class: "tech-button") %>
                     <% end %>
                   </article>
                 <% end %>

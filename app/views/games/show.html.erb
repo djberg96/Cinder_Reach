@@ -1,15 +1,22 @@
-<% content_for :title, "Cycle #{@state['cycle']} — Cinder Reach" %>
+<% watch_name = @state["watch"] == 2 ? "II" : "I" %>
+<% content_for :title, "Cycle #{@state['cycle']} · Watch #{watch_name} — Cinder Reach" %>
 
 <main class="game-shell phase-<%= @state['phase'] %> <%= 'has-played-cards' if @state['played'].any? %> <%= 'has-pending-effect' if @state['pending_effect'].present? %>">
   <header class="command-header">
     <%= link_to root_path, class: "brand-mark" do %>
       <span class="brand-star">✦</span><span><b>CINDER</b> REACH</span>
     <% end %>
-    <div class="cycle-track" aria-label="Cycle <%= @state['cycle'] %> of 10">
-      <span class="micro-label">CYCLE</span>
+    <div class="cycle-track" aria-label="Cycle <%= @state['cycle'] %> of 10, Watch <%= watch_name %> of 2">
+      <span class="micro-label">CYCLE <%= @state["cycle"] %> · WATCH <%= watch_name %></span>
       <div class="cycle-pips">
         <% 1.upto(10) do |number| %>
-          <span class="<%= 'past' if number < @state['cycle'] %> <%= 'current' if number == @state['cycle'] %>"><%= number %></span>
+          <span class="cycle-pip <%= 'past' if number < @state['cycle'] %> <%= 'current' if number == @state['cycle'] %>">
+            <b><%= number %></b>
+            <small>
+              <i class="watch-marker <%= 'complete' if number < @state['cycle'] || (number == @state['cycle'] && @state['watch'] == 2) %> <%= 'active' if number == @state['cycle'] && @state['watch'] == 1 %>">I</i>
+              <i class="watch-marker <%= 'complete' if number < @state['cycle'] %> <%= 'active' if number == @state['cycle'] && @state['watch'] == 2 %>">II</i>
+            </small>
+          </span>
         <% end %>
       </div>
     </div>
@@ -31,7 +38,7 @@
       <div class="action-pips">
         <% 1.upto(2) do |n| %><i class="<%= 'filled' if n <= @state['actions'] %>">◆</i><% end %>
       </div>
-      <small>AFTER COMMAND</small>
+      <small>THIS WATCH</small>
     </div>
     <div class="stat resources-stat">
       <div><span>SUPPLY</span><strong><%= @state["supply"] %></strong><small>THIS CYCLE</small></div>
@@ -146,9 +153,9 @@
         </div>
       </div>
       <aside class="defense-readout">
-        <span class="micro-label">TAGS IN PLAY</span>
-        <% if @engine.tags.any? %>
-          <% @engine.tags.tally.each do |tag, count| %><span class="tag tag-<%= tag.downcase %>"><%= tag_symbol(tag) %> <%= tag %> ×<%= count %></span><% end %>
+        <span class="micro-label">CRISIS READINESS</span>
+        <% if @engine.crisis_tags.any? %>
+          <% @engine.crisis_tags.tally.each do |tag, count| %><span class="tag tag-<%= tag.downcase %>"><%= tag_symbol(tag) %> <%= tag %> ×<%= count %></span><% end %>
         <% else %>
           <em>NO COVER</em>
         <% end %>

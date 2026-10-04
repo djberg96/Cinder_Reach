@@ -8,6 +8,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     state = game.state
 
     assert_equal 1, state["cycle"]
+    assert_equal 1, state["watch"]
     assert_equal 5, state["stability"]
     assert_equal 6, state["hand"].size
     assert_equal 6, state["deck"].size
@@ -20,6 +21,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_empty state["surveyed_worlds"]
     assert_empty state["unlocked_tech"]
     assert_empty state["support"]
+    assert_empty state["prepared"]
     assert_equal 2, state["actions"]
     assert_equal 0, state["data"]
     assert_equal "command", state["phase"]
@@ -30,6 +32,21 @@ class CinderReachEngineTest < ActiveSupport::TestCase
 
     assert_equal 1, game.state["fleet"]
     assert_equal "silent_ping", game.state["incoming_crisis"]
+  end
+
+  test "an existing game enters the two watch rules safely" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["rules_version"] = 2
+    state.delete("watch")
+    state.delete("prepared")
+    game.update!(state: state)
+
+    engine = CinderReach::Engine.new(game)
+
+    assert_equal 3, engine.state["rules_version"]
+    assert_equal 1, engine.state["watch"]
+    assert_empty engine.state["prepared"]
   end
 
   test "two command cards resolve abilities and the remainder becomes support" do
@@ -99,13 +116,17 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_not game.engine.tech_available?("nav_gateways")
   end
 
-  test "two main actions occur before the visible crisis" do
+  test "two actions advance the first watch and the crisis waits for the second" do
     game = CinderReach::Engine.start!
     incoming = game.state["incoming_crisis"]
     following = game.state["crisis_deck"].first
     state = game.state
     state["phase"] = "action"
+    state["watch"] = 1
     state["supply"] = 10
+    state["hand"] = []
+    state["played"] = %w[militia charter]
+    state["support"] = %w[colonist survey_probe colonist militia]
     state["reach"] = %w[survey_skiff habitat_ring]
     game.update!(state: state)
 
@@ -114,9 +135,44 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 1, game.state["actions"]
 
     game.engine.buy!(1)
+    assert_equal "command", game.state["phase"]
+    assert_equal 2, game.state["watch"]
+    assert_equal %w[militia charter], game.state["prepared"]
+    assert_equal 6, game.state["hand"].size
+    assert_equal 5, game.state["supply"]
+    assert_nil game.state["current_crisis"]
+    assert_equal incoming, game.state["incoming_crisis"]
+    assert_includes game.engine.crisis_tags, "FLEET"
+
+    2.times { game.engine.play_card!(0) }
+    game.engine.end_actions!
+
     assert_equal "crisis", game.state["phase"]
     assert_equal incoming, game.state["current_crisis"]
     assert_equal following, game.state["incoming_crisis"]
+  end
+
+  test "watch one command abilities expire but cycle limits do not reset" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "action"
+    state["watch"] = 1
+    state["hand"] = []
+    state["played"] = %w[charter militia]
+    state["support"] = %w[colonist colonist survey_probe militia]
+    state["buy_discount"] = 1
+    state["hunter_used"] = true
+    state["world_action_used"] = true
+    game.update!(state: state)
+
+    game.engine.end_actions!
+
+    assert_equal 0, game.state["buy_discount"]
+    assert game.state["hunter_used"]
+    assert game.state["world_action_used"]
+    assert_equal %w[charter militia], game.state["prepared"]
+    assert_equal %w[DECREE FLEET], game.engine.crisis_tags
+    assert_empty game.engine.tags
   end
 
   test "survey spends data once and colonization completes one action" do
@@ -177,7 +233,8 @@ class CinderReachEngineTest < ActiveSupport::TestCase
   test "intercept cancels the first fleet advance from a crisis" do
     game = CinderReach::Engine.start!
     state = game.state
-    state["played"] = [ "militia_wing" ]
+    state["prepared"] = [ "militia_wing" ]
+    state["played"] = []
     state["hand"] = []
     state["phase"] = "crisis"
     state["current_crisis"] = "silent_ping"
@@ -191,11 +248,29 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal "cleanup", game.state["phase"]
   end
 
+  test "a command prepared in watch one can block the crisis" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["prepared"] = [ "militia" ]
+    state["played"] = []
+    state["phase"] = "crisis"
+    state["current_crisis"] = "admiralty_demand"
+    state["fleet"] = 2
+    game.update!(state: state)
+
+    game.engine.resolve_crisis!
+
+    assert_equal 2, game.state["fleet"]
+    assert_equal "cleanup", game.state["phase"]
+  end
+
   test "cleanup draws six and preserves data but not ordinary supply" do
     game = CinderReach::Engine.start!
     state = game.state
     state["phase"] = "cleanup"
+    state["watch"] = 2
     state["hand"] = []
+    state["prepared"] = %w[charter militia]
     state["played"] = %w[colonist militia]
     state["support"] = %w[colonist survey_probe charter militia]
     state["data"] = 3
@@ -207,6 +282,8 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 6, game.state["hand"].size
     assert_equal 3, game.state["data"]
     assert_equal 0, game.state["supply"]
+    assert_equal 1, game.state["watch"]
+    assert_empty game.state["prepared"]
     assert_equal "command", game.state["phase"]
   end
 

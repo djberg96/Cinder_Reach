@@ -1,7 +1,8 @@
 <% case @state["phase"]
    when "command"
      command_number = [ @state["played"].length + 1, 2 ].min
-     guide_step = "YOUR TURN · COMMAND #{command_number}/2"
+     watch_name = @state["watch"] == 2 ? "II" : "I"
+     guide_step = "WATCH #{watch_name} · COMMAND #{command_number}/2"
      guide_icon = "↓"
      guide_title = @state["pending_effect"].present? ? "Resolve the signal" : "Choose a command"
      guide_reminder = if @state["pending_effect"].present?
@@ -10,10 +11,11 @@
        "Choose two cards as Commands. Their abilities and crisis tags activate; every remaining card becomes Support and generates Supply and banked Data."
      end
    when "action"
-     guide_step = "YOUR TURN · #{@state['actions']} ACTIONS LEFT"
+     watch_name = @state["watch"] == 2 ? "II" : "I"
+     guide_step = "WATCH #{watch_name} · #{@state['actions']} ACTIONS LEFT"
      guide_icon = "◇"
      guide_title = "Take an action"
-     guide_reminder = "Spend Supply to buy cards or colonize. Spend Data to survey or research. You may repeat an action, or purge a card from this cycle."
+     guide_reminder = "Spend Supply to buy cards or colonize. Spend Data to survey or research. Supply and crisis readiness carry from Watch I into Watch II."
    when "survey_decision"
      guide_step = "WORLD ACTION"
      guide_icon = "⌂"
@@ -23,12 +25,12 @@
      guide_step = "SYSTEM RESPONSE"
      guide_icon = "!"
      guide_title = "Resolve the crisis"
-     guide_reminder = "Only your two Command cards provide crisis tags and protection."
+     guide_reminder = "Command tags prepared during either Watch provide crisis protection."
    when "cleanup"
      guide_step = "END OF CYCLE"
      guide_icon = "↻"
      guide_title = "Cycle complete"
-     guide_reminder = "Commands and Support discard. Supply normally expires; banked Data remains."
+     guide_reminder = "Both Watches discard. Supply normally expires; banked Data remains."
    else
      guide_step = "RUN COMPLETE"
      guide_icon = "✦"
@@ -47,10 +49,10 @@
 
   <% if @state["phase"] == "action" %>
     <div class="guide-resources"><span>SUPPLY <b><%= @state["supply"] %></b></span><span>DATA <b><%= @state["data"] %></b></span></div>
-    <%= button_to "End actions · face crisis", end_actions_game_path(@game), class: "text-button guide-end-button" %>
+    <%= button_to(@state["watch"] == 1 ? "End Watch I →" : "End actions · face crisis", end_actions_game_path(@game), class: "text-button guide-end-button") %>
   <% elsif @state["phase"] == "survey_decision" %>
     <div class="guide-resources"><span>SUPPLY <b><%= @state["supply"] %></b></span><span>ACTIONS <b><%= @state["actions"] %></b></span></div>
   <% elsif @state["phase"] == "cleanup" %>
-    <%= button_to(@state["cycle"] == 10 ? "Score mandate →" : "Begin cycle #{@state['cycle'] + 1} →", cleanup_game_path(@game), class: "primary-button guide-button") %>
+    <%= button_to(@state["cycle"] == 10 ? "Score mandate →" : "Begin cycle #{@state['cycle'] + 1} · Watch I →", cleanup_game_path(@game), class: "primary-button guide-button") %>
   <% end %>
 </section>

@@ -19,12 +19,12 @@ module CinderReach
 
       starter = ([ "colonist" ] * 4 + [ "survey_probe" ] * 3 + [ "militia" ] * 3 + [ "charter" ] * 2).shuffle
       state = {
-        "rules_version" => 2,
-        "cycle" => 1, "stability" => difficulty == "prospect" ? 6 : 5,
+        "rules_version" => 3,
+        "cycle" => 1, "watch" => 1, "stability" => difficulty == "prospect" ? 6 : 5,
         "fleet" => difficulty == "silent" ? 1 : 0, "colonies" => 0,
         "grid" => false, "held" => false, "supply" => 0, "data" => 0, "actions" => ACTION_LIMIT,
         "unlocked_tech" => [],
-        "deck" => starter.drop(6), "hand" => starter.first(6), "discard" => [], "played" => [], "support" => [], "scrapped" => [],
+        "deck" => starter.drop(6), "hand" => starter.first(6), "discard" => [], "played" => [], "support" => [], "prepared" => [], "scrapped" => [],
         "market_deck" => market.drop(4), "reach" => market.first(4),
         "deep" => worlds.drop(3), "system" => worlds.first(3), "surveyed_worlds" => [],
         "crisis_deck" => crises.drop(1), "crisis_discard" => [], "incoming_crisis" => crises.first, "current_crisis" => nil,
@@ -32,7 +32,7 @@ module CinderReach
         "buy_discount" => 0, "survey_discount" => 0, "colony_discount" => 0, "research_discount" => 0,
         "vault_discount" => false, "intercept_used" => false, "stability_guard_used" => false,
         "unrest_guard_used" => false, "hunter_used" => false, "world_action_used" => false, "free_buy_used" => false,
-        "glimpse" => nil, "log" => [ "Cycle 1 begins. Choose two Commands." ], "outcome" => nil
+        "glimpse" => nil, "log" => [ "Cycle 1 · Watch I begins. Choose two Commands." ], "outcome" => nil
       }
       Game.create!(difficulty: difficulty, status: "playing", state: state)
     end
@@ -51,7 +51,15 @@ module CinderReach
     def tech?(key) = state["unlocked_tech"].include?(key.to_s)
 
     def tags
-      result = state["played"].filter_map { |key| card(key)[:tag] }
+      tags_for(state["played"])
+    end
+
+    def crisis_tags
+      tags_for(state["prepared"] + state["played"])
+    end
+
+    def tags_for(cards)
+      result = cards.filter_map { |key| card(key)[:tag] }
       result += %w[COLONY FLEET] if tech?("civ_unity") && result.include?("DECREE")
       result
     end
@@ -97,7 +105,7 @@ module CinderReach
     end
 
     def scrappable_cards
-      %w[support played hand].flat_map do |pile|
+      %w[prepared support played hand].flat_map do |pile|
         state[pile].each_with_index.map { |key, index| [ pile, index, key ] }
       end
     end
@@ -293,7 +301,7 @@ module CinderReach
       require_action!
       log!("Ended the action phase with #{state['actions']} action#{'s' unless state['actions'] == 1} unused.")
       state["actions"] = 0
-      begin_crisis!
+      advance_watch!
       save!
     end
 
@@ -304,18 +312,18 @@ module CinderReach
 
       case key
       when "ration_riot"
-        unless tags.count("COLONY") >= 2
+        unless crisis_tags.count("COLONY") >= 2
           adjust_stability!(-1)
           gain_unrest! if playing?
         end
       when "admiralty_demand"
-        adjust_fleet!(1, crisis: true) unless tags.include?("FLEET")
+        adjust_fleet!(1, crisis: true) unless crisis_tags.include?("FLEET")
       when "consortium_embargo"
-        adjust_stability!(-1) unless tags.include?("DECREE")
+        adjust_stability!(-1) unless crisis_tags.include?("DECREE")
       when "silent_ping"
         adjust_fleet!(1, crisis: true)
       when "council_fracture"
-        unless tags.include?("DECREE")
+        unless crisis_tags.include?("DECREE")
           adjust_stability!(-1)
           gain_unrest! if playing?
         end
@@ -328,7 +336,7 @@ module CinderReach
           raise InvalidMove, "Choose a card to scrap or lose Stability"
         end
       when "probe_swarm"
-        adjust_fleet!(1, crisis: true) unless tags.include?("FLEET")
+        adjust_fleet!(1, crisis: true) unless crisis_tags.include?("FLEET")
         adjust_stability!(-1) if state["fleet"] >= 3 && playing?
       when "refugee_wave"
         gain_unrest!
@@ -356,7 +364,8 @@ module CinderReach
     def cleanup!
       require_phase!("cleanup")
       banked_supply = tech?("ind_automation") ? [ state["supply"], 2 ].min : 0
-      state["discard"].concat(state["played"]).concat(state["support"]).concat(state["hand"])
+      state["discard"].concat(state["prepared"]).concat(state["played"]).concat(state["support"]).concat(state["hand"])
+      state["prepared"] = []
       state["played"] = []
       state["support"] = []
       state["hand"] = []
@@ -377,19 +386,20 @@ module CinderReach
         state["colonies"] >= 2 ? win!("Mandate fulfilled. Ark-9 survives the tenth cycle.") : lose!("The mandate expired before two colonies could be established.")
       else
         draw!(6)
+        state["watch"] = 1
         state["actions"] = ACTION_LIMIT
         state["supply"] += 3 if tech?("ind_replicator")
         state["supply"] += state["colonies"] if tech?("civ_beacon")
         state["data"] += [ state["surveyed_worlds"].length, 3 ].min if tech?("nav_living_atlas")
         state["phase"] = "command"
         refresh_intel!
-        log!("Cycle #{state['cycle']} begins. Choose two Commands.")
+        log!("Cycle #{state['cycle']} · Watch I begins. Choose two Commands.")
       end
       save!
     end
 
     def score
-      owned = state.values_at("deck", "hand", "discard", "played", "support").flatten
+      owned = state.values_at("deck", "hand", "discard", "prepared", "played", "support").flatten
       state["colonies"] * 3 + state["stability"] + (state["fleet"] <= 1 ? 2 : 0) +
         (state["grid"] ? 2 : 0) + state["unlocked_tech"].length + owned.count { |key| card(key)[:tag] == "LAB" } - owned.count("unrest")
     end
@@ -399,7 +409,7 @@ module CinderReach
     def require_action!
       require_phase!("action")
       require_no_pending!
-      raise InvalidMove, "No actions remain this cycle" unless state["actions"].positive?
+      raise InvalidMove, "No actions remain this Watch" unless state["actions"].positive?
     end
 
     def commit_support!
@@ -485,7 +495,26 @@ module CinderReach
         state["actions"] -= 1
       end
       state["phase"] = "action"
-      state["actions"].positive? ? refresh_intel! : begin_crisis!
+      state["actions"].positive? ? refresh_intel! : advance_watch!
+    end
+
+    def advance_watch!
+      state["watch"] == 1 ? begin_second_watch! : begin_crisis!
+    end
+
+    def begin_second_watch!
+      state["discard"].concat(state["support"]).concat(state["hand"])
+      state["prepared"].concat(state["played"])
+      state["played"] = []
+      state["support"] = []
+      state["hand"] = []
+      %w[buy_discount survey_discount colony_discount research_discount].each { |key| state[key] = 0 }
+      state["watch"] = 2
+      state["actions"] = ACTION_LIMIT
+      state["phase"] = "command"
+      draw!(6)
+      refresh_intel!
+      log!("Cycle #{state['cycle']} · Watch II begins with #{state['supply']} Supply. Choose two Commands.")
     end
 
     def begin_crisis!
@@ -544,8 +573,9 @@ module CinderReach
     end
 
     def intercept_available?
-      special_command = (state["played"] & %w[militia_wing gunship defense_grid]).any?
-      special_command || (tech?("def_patrol") && tags.include?("FLEET"))
+      crisis_commands = state["prepared"] + state["played"]
+      special_command = (crisis_commands & %w[militia_wing gunship defense_grid]).any?
+      special_command || (tech?("def_patrol") && crisis_tags.include?("FLEET"))
     end
 
     def gain_unrest!
@@ -559,7 +589,7 @@ module CinderReach
     end
 
     def scrap_first_unrest!
-      %w[hand support played discard deck].each do |pile|
+      %w[hand support played prepared discard deck].each do |pile|
         index = state[pile].index("unrest")
         next unless index
         state[pile].delete_at(index)
@@ -573,7 +603,7 @@ module CinderReach
     def scrap_table_card!(pile, index)
       raise InvalidMove, "Choose a card from the table" if pile.nil? || index.nil?
       pile = pile.to_s
-      raise InvalidMove, "Choose a card from the table" unless %w[support played hand].include?(pile)
+      raise InvalidMove, "Choose a card from the table" unless %w[prepared support played hand].include?(pile)
       key = state[pile].delete_at(Integer(index))
       raise InvalidMove, "That card is no longer on the table" unless key
       state["scrapped"] << key
@@ -616,9 +646,12 @@ module CinderReach
     end
 
     def normalize_state!
-      migrate_legacy_state! unless state["rules_version"] == 2
+      migrate_legacy_state! if state["rules_version"].to_i < 2
+      migrate_two_watch_state! if state["rules_version"].to_i < 3
       state["unlocked_tech"] ||= []
       state["support"] ||= []
+      state["prepared"] ||= []
+      state["watch"] ||= 1
       state["data"] ||= 0
       state["actions"] ||= ACTION_LIMIT
       state["surveyed_worlds"] ||= []
@@ -659,6 +692,12 @@ module CinderReach
         end
       end
       state["rules_version"] = 2
+    end
+
+    def migrate_two_watch_state!
+      state["watch"] = %w[crisis cleanup finished].include?(state["phase"]) ? 2 : 1
+      state["prepared"] = []
+      state["rules_version"] = 3
     end
 
     def win!(message)

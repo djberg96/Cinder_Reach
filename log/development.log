@@ -9301,3 +9301,263 @@ Processing by GamesController#show as TURBO_STREAM
 Completed 200 OK in 11ms (Views: 8.8ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
 
 
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:37:in 'CinderReach::Engine.start!'
+  [1m[36mGame Create (0.5ms)[0m  [1m[32mINSERT INTO "games" ("difficulty", "status", "state", "created_at", "updated_at") VALUES ('mandate', 'playing', '{"rules_version":3,"cycle":1,"watch":1,"stability":5,"fleet":0,"colonies":0,"grid":false,"held":false,"supply":0,"data":0,"actions":2,"unlocked_tech":[],"deck":["colonist","charter","charter","militia","colonist","colonist"],"hand":["militia","survey_probe","survey_probe","militia","survey_probe","colonist"],"discard":[],"played":[],"support":[],"prepared":[],"scrapped":[],"market_deck":["survey_skiff","gunship","militia_wing","gene_vault","habitat_ring","habitat_ring","defense_grid","listener_array","gunship","foundry","field_lab","foundry","habitat_ring","field_lab","embassy","militia_wing","decree","decree","embassy"],"reach":["survey_skiff","arcology","decree","survey_skiff"],"deep":["pale_garden","rust_mesa","glass_sea"],"system":["red_choir","vault_orbit","black_relay"],"surveyed_worlds":[],"crisis_deck":["deep_signal","beacon_flicker","refugee_wave","ration_riot","silent_ping","council_fracture","probe_swarm","admiralty_demand","harvest_blight"],"crisis_discard":[],"incoming_crisis":"consortium_embargo","current_crisis":null,"phase":"command","surveyed_world":null,"surveyed_this_action":false,"pending_effect":null,"buy_discount":0,"survey_discount":0,"colony_discount":0,"research_discount":0,"vault_discount":false,"intercept_used":false,"stability_guard_used":false,"unrest_guard_used":false,"hunter_used":false,"world_action_used":false,"free_buy_used":false,"glimpse":null,"log":["Cycle 1 · Watch I begins. Choose two Commands."],"outcome":null}', '2026-10-04 10:26:08.723837', '2026-10-04 10:26:08.723837') RETURNING "id" /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:37:in 'CinderReach::Engine.start!'
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:37:in 'CinderReach::Engine.start!'
+Started GET "/games/21" for 127.0.0.1 at 2026-10-04 06:26:50 -0400
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='CinderReach'*/[0m
+Processing by GamesController#show as HTML
+  Parameters: {"id" => "21"}
+  [1m[36mGame Load (0.1ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 21 LIMIT 1 /*action='show',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:45:in 'GamesController#set_game'
+  Rendering layout layouts/application.html.erb
+  Rendering games/show.html.erb within layouts/application
+  Rendered games/_world.html.erb (Duration: 0.5ms | GC: 0.1ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_technology.html.erb (Duration: 2.1ms | GC: 0.1ms)
+  Rendered games/_incoming_crisis.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_turn_guide.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_rules.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/show.html.erb within layouts/application (Duration: 7.9ms | GC: 0.3ms)
+  Rendered layout layouts/application.html.erb (Duration: 11.2ms | GC: 0.3ms)
+Completed 200 OK in 27ms (Views: 12.7ms | ActiveRecord: 0.9ms (1 query, 0 cached) | GC: 1.4ms)
+
+
+  [1m[36mGame Load (0.1ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 21 LIMIT 1 /*application='CinderReach'*/[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mGame Update (0.4ms)[0m  [1m[33mUPDATE "games" SET "state" = '{"rules_version":3,"cycle":1,"watch":1,"stability":5,"fleet":0,"colonies":0,"grid":false,"held":false,"supply":0,"data":0,"actions":2,"unlocked_tech":[],"deck":["colonist","charter","charter","militia","colonist","colonist"],"hand":["survey_probe","survey_probe","militia","survey_probe","colonist"],"discard":[],"played":["militia"],"support":[],"prepared":[],"scrapped":[],"market_deck":["survey_skiff","gunship","militia_wing","gene_vault","habitat_ring","habitat_ring","defense_grid","listener_array","gunship","foundry","field_lab","foundry","habitat_ring","field_lab","embassy","militia_wing","decree","decree","embassy"],"reach":["survey_skiff","arcology","decree","survey_skiff"],"deep":["pale_garden","rust_mesa","glass_sea"],"system":["red_choir","vault_orbit","black_relay"],"surveyed_worlds":[],"crisis_deck":["deep_signal","beacon_flicker","refugee_wave","ration_riot","silent_ping","council_fracture","probe_swarm","admiralty_demand","harvest_blight"],"crisis_discard":[],"incoming_crisis":"consortium_embargo","current_crisis":null,"phase":"command","surveyed_world":null,"surveyed_this_action":false,"pending_effect":null,"buy_discount":0,"survey_discount":0,"colony_discount":0,"research_discount":0,"vault_discount":false,"intercept_used":false,"stability_guard_used":false,"unrest_guard_used":false,"hunter_used":false,"world_action_used":false,"free_buy_used":false,"glimpse":null,"log":["Assigned Militia as Command 1.","Cycle 1 · Watch I begins. Choose two Commands."],"outcome":null}', "updated_at" = '2026-10-04 10:27:04.517799' WHERE "games"."id" = 21 /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mGame Update (0.3ms)[0m  [1m[33mUPDATE "games" SET "state" = '{"rules_version":3,"cycle":1,"watch":1,"stability":5,"fleet":0,"colonies":0,"grid":false,"held":false,"supply":2,"data":2,"actions":2,"unlocked_tech":[],"deck":["colonist","charter","charter","militia","colonist","colonist"],"hand":[],"discard":[],"played":["militia","survey_probe"],"support":["survey_probe","militia","survey_probe","colonist"],"prepared":[],"scrapped":[],"market_deck":["survey_skiff","gunship","militia_wing","gene_vault","habitat_ring","habitat_ring","defense_grid","listener_array","gunship","foundry","field_lab","foundry","habitat_ring","field_lab","embassy","militia_wing","decree","decree","embassy"],"reach":["survey_skiff","arcology","decree","survey_skiff"],"deep":["pale_garden","rust_mesa","glass_sea"],"system":["red_choir","vault_orbit","black_relay"],"surveyed_worlds":[],"crisis_deck":["deep_signal","beacon_flicker","refugee_wave","ration_riot","silent_ping","council_fracture","probe_swarm","admiralty_demand","harvest_blight"],"crisis_discard":[],"incoming_crisis":"consortium_embargo","current_crisis":null,"phase":"action","surveyed_world":null,"surveyed_this_action":false,"pending_effect":null,"buy_discount":0,"survey_discount":1,"colony_discount":0,"research_discount":0,"vault_discount":false,"intercept_used":false,"stability_guard_used":false,"unrest_guard_used":false,"hunter_used":false,"world_action_used":false,"free_buy_used":false,"glimpse":null,"log":["Committed 4 Support: +2 Supply, +2 Data.","Assigned Survey Probe as Command 2.","Assigned Militia as Command 1.","Cycle 1 · Watch I begins. Choose two Commands."],"outcome":null}', "updated_at" = '2026-10-04 10:27:04.519531' WHERE "games"."id" = 21 /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mGame Update (0.3ms)[0m  [1m[33mUPDATE "games" SET "state" = '{"rules_version":3,"cycle":1,"watch":2,"stability":5,"fleet":0,"colonies":0,"grid":false,"held":false,"supply":2,"data":2,"actions":2,"unlocked_tech":[],"deck":[],"hand":["colonist","charter","charter","militia","colonist","colonist"],"discard":["survey_probe","militia","survey_probe","colonist"],"played":[],"support":[],"prepared":["militia","survey_probe"],"scrapped":[],"market_deck":["survey_skiff","gunship","militia_wing","gene_vault","habitat_ring","habitat_ring","defense_grid","listener_array","gunship","foundry","field_lab","foundry","habitat_ring","field_lab","embassy","militia_wing","decree","decree","embassy"],"reach":["survey_skiff","arcology","decree","survey_skiff"],"deep":["pale_garden","rust_mesa","glass_sea"],"system":["red_choir","vault_orbit","black_relay"],"surveyed_worlds":[],"crisis_deck":["deep_signal","beacon_flicker","refugee_wave","ration_riot","silent_ping","council_fracture","probe_swarm","admiralty_demand","harvest_blight"],"crisis_discard":[],"incoming_crisis":"consortium_embargo","current_crisis":null,"phase":"command","surveyed_world":null,"surveyed_this_action":false,"pending_effect":null,"buy_discount":0,"survey_discount":0,"colony_discount":0,"research_discount":0,"vault_discount":false,"intercept_used":false,"stability_guard_used":false,"unrest_guard_used":false,"hunter_used":false,"world_action_used":false,"free_buy_used":false,"glimpse":null,"log":["Cycle 1 · Watch II begins with 2 Supply. Choose two Commands.","Ended the action phase with 2 actions unused.","Committed 4 Support: +2 Supply, +2 Data.","Assigned Survey Probe as Command 2.","Assigned Militia as Command 1.","Cycle 1 · Watch I begins. Choose two Commands."],"outcome":null}', "updated_at" = '2026-10-04 10:27:04.520472' WHERE "games"."id" = 21 /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mCOMMIT TRANSACTION /*application='CinderReach'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:736:in 'CinderReach::Engine#save!'
+  [1m[36mGame Load (0.0ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 21 LIMIT 1 /*application='CinderReach'*/[0m
+Started GET "/games/21" for 127.0.0.1 at 2026-10-04 06:27:09 -0400
+Processing by GamesController#show as HTML
+  Parameters: {"id" => "21"}
+  [1m[36mGame Load (0.1ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 21 LIMIT 1 /*action='show',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:45:in 'GamesController#set_game'
+  Rendering layout layouts/application.html.erb
+  Rendering games/show.html.erb within layouts/application
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_technology.html.erb (Duration: 1.5ms | GC: 0.0ms)
+  Rendered games/_incoming_crisis.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_turn_guide.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_rules.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/show.html.erb within layouts/application (Duration: 3.2ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 3.6ms | GC: 0.0ms)
+Completed 200 OK in 6ms (Views: 3.9ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
+
+
+Started GET "/games/19" for 127.0.0.1 at 2026-10-04 06:32:22 -0400
+Processing by GamesController#show as HTML
+  Parameters: {"id" => "19"}
+  [1m[36mGame Load (0.5ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 19 LIMIT 1 /*action='show',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:45:in 'GamesController#set_game'
+  Rendering layout layouts/application.html.erb
+  Rendering games/show.html.erb within layouts/application
+  Rendered games/_world.html.erb (Duration: 0.9ms | GC: 0.2ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.4ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_technology.html.erb (Duration: 2.0ms | GC: 0.1ms)
+  Rendered games/_incoming_crisis.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_turn_guide.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_rules.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/show.html.erb within layouts/application (Duration: 9.1ms | GC: 0.4ms)
+  Rendered layout layouts/application.html.erb (Duration: 10.7ms | GC: 0.5ms)
+Completed 200 OK in 17ms (Views: 11.4ms | ActiveRecord: 0.5ms (1 query, 0 cached) | GC: 0.9ms)
+
+
+Started GET "/" for 127.0.0.1 at 2026-10-04 06:32:40 -0400
+Processing by GamesController#index as HTML
+  [1m[36mGame Load (0.2ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 19 LIMIT 1 /*action='index',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:6:in 'GamesController#index'
+  Rendering layout layouts/application.html.erb
+  Rendering games/index.html.erb within layouts/application
+  Rendered games/index.html.erb within layouts/application (Duration: 1.6ms | GC: 0.3ms)
+  Rendered layout layouts/application.html.erb (Duration: 2.0ms | GC: 0.3ms)
+Completed 200 OK in 5ms (Views: 2.4ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.3ms)
+
+
+Started GET "/" for 127.0.0.1 at 2026-10-04 06:32:40 -0400
+Processing by GamesController#index as HTML
+  [1m[36mGame Load (0.9ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 19 LIMIT 1 /*action='index',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:6:in 'GamesController#index'
+  Rendering layout layouts/application.html.erb
+  Rendering games/index.html.erb within layouts/application
+  Rendered games/index.html.erb within layouts/application (Duration: 1.0ms | GC: 0.1ms)
+  Rendered layout layouts/application.html.erb (Duration: 1.6ms | GC: 0.1ms)
+Completed 200 OK in 6ms (Views: 2.0ms | ActiveRecord: 0.9ms (1 query, 0 cached) | GC: 0.1ms)
+
+
+Started GET "/" for 127.0.0.1 at 2026-10-04 06:36:25 -0400
+Processing by GamesController#index as HTML
+  [1m[36mGame Load (0.1ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 19 LIMIT 1 /*action='index',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:6:in 'GamesController#index'
+  Rendering layout layouts/application.html.erb
+  Rendering games/index.html.erb within layouts/application
+  Rendered games/index.html.erb within layouts/application (Duration: 0.8ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 2.2ms | GC: 0.0ms)
+Completed 200 OK in 6ms (Views: 2.7ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.2ms)
+
+
+Started GET "/" for 127.0.0.1 at 2026-10-04 06:36:25 -0400
+Processing by GamesController#index as HTML
+  [1m[36mGame Load (0.1ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 19 LIMIT 1 /*action='index',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:6:in 'GamesController#index'
+  Rendering layout layouts/application.html.erb
+  Rendering games/index.html.erb within layouts/application
+  Rendered games/index.html.erb within layouts/application (Duration: 1.3ms | GC: 0.2ms)
+  Rendered layout layouts/application.html.erb (Duration: 1.9ms | GC: 0.2ms)
+Completed 200 OK in 4ms (Views: 2.3ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.2ms)
+
+
+Started POST "/games" for 127.0.0.1 at 2026-10-04 06:36:29 -0400
+Processing by GamesController#create as TURBO_STREAM
+  Parameters: {"authenticity_token" => "[FILTERED]", "difficulty" => "mandate", "commit" => "Begin expedition  →"}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN immediate TRANSACTION /*action='create',application='CinderReach',controller='games'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:37:in 'CinderReach::Engine.start!'
+  [1m[36mGame Create (1.0ms)[0m  [1m[32mINSERT INTO "games" ("difficulty", "status", "state", "created_at", "updated_at") VALUES ('mandate', 'playing', '{"rules_version":3,"cycle":1,"watch":1,"stability":5,"fleet":0,"colonies":0,"grid":false,"held":false,"supply":0,"data":0,"actions":2,"unlocked_tech":[],"deck":["survey_probe","survey_probe","colonist","survey_probe","colonist","militia"],"hand":["militia","charter","colonist","colonist","militia","charter"],"discard":[],"played":[],"support":[],"prepared":[],"scrapped":[],"market_deck":["gene_vault","foundry","gunship","foundry","listener_array","defense_grid","survey_skiff","decree","gunship","field_lab","militia_wing","survey_skiff","habitat_ring","arcology","embassy","decree","field_lab","militia_wing","survey_skiff"],"reach":["decree","habitat_ring","embassy","habitat_ring"],"deep":["vault_orbit","glass_sea","rust_mesa"],"system":["red_choir","pale_garden","black_relay"],"surveyed_worlds":[],"crisis_deck":["beacon_flicker","council_fracture","silent_ping","deep_signal","harvest_blight","refugee_wave","probe_swarm","consortium_embargo","ration_riot"],"crisis_discard":[],"incoming_crisis":"admiralty_demand","current_crisis":null,"phase":"command","surveyed_world":null,"surveyed_this_action":false,"pending_effect":null,"buy_discount":0,"survey_discount":0,"colony_discount":0,"research_discount":0,"vault_discount":false,"intercept_used":false,"stability_guard_used":false,"unrest_guard_used":false,"hunter_used":false,"world_action_used":false,"free_buy_used":false,"glimpse":null,"log":["Cycle 1 · Watch I begins. Choose two Commands."],"outcome":null}', '2026-10-04 10:36:29.893337', '2026-10-04 10:36:29.893337') RETURNING "id" /*action='create',application='CinderReach',controller='games'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:37:in 'CinderReach::Engine.start!'
+  [1m[36mTRANSACTION (0.5ms)[0m  [1m[35mCOMMIT TRANSACTION /*action='create',application='CinderReach',controller='games'*/[0m
+  ↳ app/services/cinder_reach/engine.rb:37:in 'CinderReach::Engine.start!'
+Redirected to http://localhost:3000/games/22
+↳ app/controllers/games_controller.rb:12:in 'GamesController#create'
+Completed 302 Found in 7ms (ActiveRecord: 1.6ms (1 query, 0 cached) | GC: 0.2ms)
+
+
+Started GET "/games/22" for 127.0.0.1 at 2026-10-04 06:36:29 -0400
+Processing by GamesController#show as TURBO_STREAM
+  Parameters: {"id" => "22"}
+  [1m[36mGame Load (0.3ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 22 LIMIT 1 /*action='show',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:45:in 'GamesController#set_game'
+  Rendering layout layouts/application.html.erb
+  Rendering games/show.html.erb within layouts/application
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_technology.html.erb (Duration: 2.8ms | GC: 0.0ms)
+  Rendered games/_incoming_crisis.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_turn_guide.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_rules.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/show.html.erb within layouts/application (Duration: 5.4ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 5.8ms | GC: 0.0ms)
+Completed 200 OK in 10ms (Views: 6.3ms | ActiveRecord: 0.3ms (1 query, 0 cached) | GC: 0.0ms)
+
+
+Started GET "/games/21" for 127.0.0.1 at 2026-10-04 06:36:32 -0400
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='CinderReach'*/[0m
+Processing by GamesController#show as HTML
+  Parameters: {"id" => "21"}
+  [1m[36mGame Load (0.1ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 21 LIMIT 1 /*action='show',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:45:in 'GamesController#set_game'
+  Rendering layout layouts/application.html.erb
+  Rendering games/show.html.erb within layouts/application
+  Rendered games/_world.html.erb (Duration: 0.5ms | GC: 0.1ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_technology.html.erb (Duration: 2.0ms | GC: 0.1ms)
+  Rendered games/_incoming_crisis.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_turn_guide.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_rules.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/show.html.erb within layouts/application (Duration: 7.1ms | GC: 0.3ms)
+  Rendered layout layouts/application.html.erb (Duration: 9.3ms | GC: 0.3ms)
+Completed 200 OK in 26ms (Views: 10.7ms | ActiveRecord: 0.7ms (1 query, 0 cached) | GC: 1.4ms)
+
+
+Started GET "/games/22" for 127.0.0.1 at 2026-10-04 06:46:47 -0400
+Processing by GamesController#show as HTML
+  Parameters: {"id" => "22"}
+  [1m[36mGame Load (2.2ms)[0m  [1m[34mSELECT "games".* FROM "games" WHERE "games"."id" = 22 LIMIT 1 /*action='show',application='CinderReach',controller='games'*/[0m
+  ↳ app/controllers/games_controller.rb:45:in 'GamesController#set_game'
+  Rendering layout layouts/application.html.erb
+  Rendering games/show.html.erb within layouts/application
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_world.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_technology.html.erb (Duration: 4.9ms | GC: 0.0ms)
+  Rendered games/_incoming_crisis.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_turn_guide.html.erb (Duration: 0.1ms | GC: 0.0ms)
+  Rendered games/_rules.html.erb (Duration: 0.0ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.4ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.6ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.3ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/_card.html.erb (Duration: 0.2ms | GC: 0.0ms)
+  Rendered games/show.html.erb within layouts/application (Duration: 9.7ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 11.1ms | GC: 0.0ms)
+Completed 200 OK in 16ms (Views: 11.5ms | ActiveRecord: 2.2ms (1 query, 0 cached) | GC: 0.0ms)
+
+

@@ -12,11 +12,11 @@
       <span class="crisis-art-core">!</span>
     </div>
     <div class="crisis-card-copy">
-      <span class="incoming-status"><i class="incoming-pulse"></i>INCOMING AFTER YOUR ACTIONS</span>
+      <span class="incoming-status"><i class="incoming-pulse"></i><%= @state["watch"] == 1 ? "RESOLVES AFTER WATCH II" : "RESOLVES AFTER THIS WATCH" %></span>
       <div class="crisis-title-row">
         <h2><%= signal[:name] %></h2>
         <span class="crisis-help" tabindex="0" aria-label="What is a crisis card?">?</span>
-        <span class="crisis-tooltip" role="tooltip"><b>CRISIS CARD</b>Resolves after your actions. Command tags can satisfy the block condition on the left; otherwise apply the effect on the right.</span>
+        <span class="crisis-tooltip" role="tooltip"><b>CRISIS CARD</b>This threat remains visible for both Watches. Command tags from either Watch enter Readiness and can satisfy its block condition.</span>
       </div>
       <div class="crisis-effect <%= 'has-defense' if display[:defense] %>">
         <% if display[:defense] %>
@@ -34,6 +34,9 @@
         </span>
       </div>
       <% if display[:note] %><span class="effect-note"><%= display[:note] %></span><% end %>
+      <% if @engine.crisis_tags.any? %>
+        <span class="crisis-readiness"><small>READINESS</small><span><% @engine.crisis_tags.tally.each do |tag, count| %><b><%= tag_symbol(tag) %> <%= tag %> ×<%= count %></b><% end %></span></span>
+      <% end %>
       <% if @engine.tech?("def_analysis") && @state["glimpse"].present? %>
         <span class="crisis-intel">DEEP INTEL · <%= crisis_data(@state["glimpse"].first)[:name] %> FOLLOWS</span>
       <% end %>

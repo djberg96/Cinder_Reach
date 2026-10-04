@@ -21,6 +21,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :success
     assert_select ".command-strip"
+    assert_select ".cycle-pip", 10
+    assert_select ".watch-marker.active", 1
     assert_select ".world-card", 3
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 6
@@ -31,8 +33,9 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".incoming-crisis .card-kind", "CRISIS CARD"
     assert_select ".incoming-crisis .crisis-card-art", 1
     assert_select ".incoming-crisis .crisis-effect", 1
+    assert_select ".incoming-crisis .incoming-status", /WATCH II/
     assert_select ".incoming-crisis .effect-results b", minimum: 1
-    assert_select ".incoming-crisis .crisis-tooltip", /Resolves after your actions/
+    assert_select ".incoming-crisis .crisis-tooltip", /remains visible for both Watches/
     assert_select ".tech-summary-row", 4
     assert_select ".tech-tab", 4
     assert_select ".tech-tab-radio[checked]", 1

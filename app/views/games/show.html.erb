@@ -8,13 +8,13 @@
     <% end %>
     <nav class="header-menu" aria-label="Game information">
       <details class="header-drawer mandate-drawer">
-        <summary>Mandate <b><%= @engine.mandate_met? ? "READY" : "#{@state['colonies']}/3" %></b></summary>
+        <summary>Mandate <b><%= @engine.mandate_met? ? "READY" : "#{@engine.colony_count}/#{@engine.colony_goal}" %></b></summary>
         <section class="mandate-card">
           <h2>Make Ark-9 hold.</h2>
           <ul>
-            <li class="<%= 'done' if @state['colonies'] >= 3 %>"><i><%= @state['colonies'] >= 3 ? '✓' : '1' %></i><span><b>Establish 3 Colonies</b><small>Required by cycle <%= @engine.cycle_limit %></small></span></li>
-            <li class="<%= 'done' if @engine.outer_colonies >= 1 %>"><i><%= @engine.outer_colonies >= 1 ? '✓' : '2' %></i><span><b>Settle the Outer Reach</b><small>At least 1 Outer colony</small></span></li>
-            <li class="<%= 'done' if @state['colonies'] >= 4 %>"><i><%= @state['colonies'] >= 4 ? '✓' : '3' %></i><span><b>Lock the Beacon</b><small>4 Colonies wins immediately</small></span></li>
+            <li class="<%= 'done' if @engine.colony_capacity_reached? %>"><i><%= @engine.colony_capacity_reached? ? '✓' : '1' %></i><span><b>Establish <%= @engine.colony_goal %> Colonies</b><small>Required by cycle <%= @engine.cycle_limit %></small></span></li>
+            <li class="<%= 'done' if @engine.outer_colonies >= @engine.outer_colony_goal %>"><i><%= @engine.outer_colonies >= @engine.outer_colony_goal ? '✓' : '2' %></i><span><b>Settle the Outer Reach</b><small>At least <%= @engine.outer_colony_goal %> Outer colonies</small></span></li>
+            <li class="<%= 'done' if @engine.doctrine_complete? %>"><i><%= @engine.doctrine_complete? ? '✓' : '3' %></i><span><b>Complete a Doctrine</b><small>Unlock any capstone technology</small></span></li>
           </ul>
         </section>
       </details>
@@ -73,20 +73,25 @@
     <div class="stat colony-stat">
       <div class="colony-heading">
         <span>COLONIES</span>
-        <strong><%= @state["colonies"] %><small>/4</small></strong>
+        <strong><%= @engine.colony_count %><small>/<%= @engine.colony_goal %></small></strong>
       </div>
-      <div class="colony-pips" data-count="<%= @state['colonies'] %>" aria-label="<%= @state['colonies'] %> of 4 colonies; the fourth locks the beacon">
-        <% 1.upto(4) do |n| %>
-          <i class="<%= 'filled' if n <= @state['colonies'] %> <%= 'is-goal' if n == 4 %>">
-            <span><%= n <= @state["colonies"] ? "⌂" : n == 4 ? "⌾" : n %></span>
-            <% if n == 4 %><small>LOCK</small><% end %>
+      <div class="colony-pips" data-count="<%= @engine.colony_count %>" aria-label="<%= @engine.colony_count %> of <%= @engine.colony_goal %> colonies; the fifth locks the beacon once a doctrine is complete">
+        <% 1.upto(@engine.colony_goal) do |n| %>
+          <i class="<%= 'filled' if n <= @engine.colony_count %> <%= 'is-goal' if n == @engine.colony_goal %>">
+            <span><%= n <= @engine.colony_count ? "⌂" : n == @engine.colony_goal ? "⌾" : n %></span>
+            <% if n == @engine.colony_goal %><small>LOCK</small><% end %>
           </i>
         <% end %>
       </div>
     </div>
-    <div class="stat grid-stat <%= 'online' if @state['grid'] %>">
+    <div class="stat grid-stat <%= 'online' if @state['grid'] %>" tabindex="0" aria-describedby="grid-tooltip">
       <span class="grid-glyph">⌬</span>
       <div><span>DEFENSE GRID</span><strong><%= @state["grid"] ? "ONLINE" : "OFFLINE" %></strong></div>
+      <div id="grid-tooltip" class="grid-tooltip" role="tooltip">
+        <b>DEFENSE GRID</b>
+        <span>With at least 2 Colonies, an online Grid prevents immediate defeat when Fleet reaches 5.</span>
+        <small>Activate it through Fortress Protocol or Black Relay. Aegis Network makes it reduce Fleet each new cycle.</small>
+      </div>
     </div>
   </section>
 
@@ -131,16 +136,23 @@
   <% if @state["phase"] == "survey_decision" && !@state["pending_effect"] %>
     <% surveyed = world_data(@state["surveyed_world"]) %>
     <% colony_cost = effective_colony_cost(@state, @state["surveyed_world"]) %>
+    <% colonize_label = if @engine.colony_capacity_reached?
+      "Colony limit reached"
+    elsif @state["supply"] >= colony_cost
+      "Colonize · #{colony_cost}"
+    else
+      "Need #{colony_cost} Supply"
+    end %>
     <section class="decision-panel colony-decision">
       <span class="decision-icon">⌂</span>
-      <div class="decision-copy"><span class="micro-label"><%= @state["surveyed_this_action"] ? "SURVEY COMPLETE" : "CHARTED WORLD" %></span><h2><%= surveyed[:name] %> is within reach.</h2><p>Colonization costs <b><%= colony_cost %> Supply</b>. You have <%= @state["supply"] %>.</p></div>
+      <div class="decision-copy"><span class="micro-label"><%= @state["surveyed_this_action"] ? "SURVEY COMPLETE" : "CHARTED WORLD" %></span><h2><%= surveyed[:name] %> is within reach.</h2><p><%= @engine.colony_capacity_reached? ? "Ark-9's five colony berths are filled." : "Colonization costs #{colony_cost} Supply. You have #{@state['supply']}." %></p></div>
       <div class="decision-actions">
         <%= button_to "Leave orbit", pass_colony_game_path(@game), class: "secondary-button" %>
         <% if @state["surveyed_world"] == "black_relay" %>
-          <%= button_to "Colonize · Grid online", colonize_game_path(@game, relay_choice: "grid"), class: "primary-button", disabled: @state["supply"] < colony_cost %>
-          <%= button_to "Colonize · Fleet −1", colonize_game_path(@game, relay_choice: "fleet"), class: "primary-button", disabled: @state["supply"] < colony_cost %>
+          <%= button_to "Colonize · Grid online", colonize_game_path(@game, relay_choice: "grid"), class: "primary-button", disabled: @engine.colony_capacity_reached? || @state["supply"] < colony_cost %>
+          <%= button_to "Colonize · Fleet −1", colonize_game_path(@game, relay_choice: "fleet"), class: "primary-button", disabled: @engine.colony_capacity_reached? || @state["supply"] < colony_cost %>
         <% else %>
-          <%= button_to(@state["supply"] >= colony_cost ? "Colonize · #{colony_cost}" : "Need #{colony_cost} Supply", colonize_game_path(@game), class: "primary-button", disabled: @state["supply"] < colony_cost) %>
+          <%= button_to colonize_label, colonize_game_path(@game), class: "primary-button", disabled: @engine.colony_capacity_reached? || @state["supply"] < colony_cost %>
         <% end %>
       </div>
     </section>

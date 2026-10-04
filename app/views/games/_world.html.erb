@@ -5,7 +5,8 @@
 <% accessible = @engine.world_accessible?(world_key) %>
 <% action_cost = charted ? effective_colony_cost(@state, world_key) : survey_cost %>
 <% available_resource = charted ? @state["supply"] : @state["data"] %>
-<% action_disabled = !accessible || available_resource < action_cost || @state["pending_effect"].present? %>
+<% colony_limit = charted && @engine.colony_capacity_reached? %>
+<% action_disabled = !accessible || colony_limit || available_resource < action_cost || @state["pending_effect"].present? %>
 <article class="world-card world-slot-<%= index %> world-<%= world_key.dasherize %> world-<%= data[:ring] %> <%= 'is-locked' unless accessible %> <%= 'is-surveyed' if charted %> <%= 'is-selected' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if action_disabled %> <%= 'is-actionable' if @state['phase'] == 'action' && !action_disabled %>">
   <div class="world-art" aria-hidden="true"><span class="world-sphere"></span></div>
   <div class="world-content">
@@ -16,15 +17,15 @@
       <div><dt>Survey <b><%= charted ? "✓" : survey_cost %></b></dt><dd><%= charted ? "Charted · reward claimed" : data[:survey_text] %></dd></div>
       <div><dt>Colonize <b><%= effective_colony_cost(@state, world_key) %></b></dt><dd><%= data[:colony_text] %></dd></div>
     </dl>
-    <% if outer && !accessible %>
-      <span class="world-access"><b>TECH ACCESS</b><%= @engine.world_access_names(world_key).join(" or ") %></span>
+    <% if !accessible %>
+      <span class="world-access"><b>TECH ACCESS</b><%= @engine.world_access_names(world_key).join(" + ") %></span>
     <% elsif outer && !charted %>
       <span class="world-access is-open"><b>TWO-STAGE EXPEDITION</b>Chart now · colonize later</span>
     <% end %>
     <% if @state["phase"] == "action" %>
       <% action_name = charted ? "COLONIZE" : "SURVEY" %>
       <% currency = charted ? "SUPPLY" : "DATA" %>
-      <span class="world-action-label"><%= !accessible ? "REQUIRES TECHNOLOGY" : action_disabled ? "#{action_name} COST #{action_cost}" : "#{action_name} · #{action_cost} #{currency}" %></span>
+      <span class="world-action-label"><%= !accessible ? "REQUIRES TECHNOLOGY" : colony_limit ? "COLONY LIMIT REACHED" : action_disabled ? "#{action_name} COST #{action_cost}" : "#{action_name} · #{action_cost} #{currency}" %></span>
       <%= button_to "", survey_game_path(@game, slot: index), class: "world-hit-area", disabled: action_disabled, form: { class: "world-hit-form" }, aria: { label: "#{action_name.titleize} #{data[:name]} for #{action_cost} #{currency.titleize}" } %>
     <% end %>
   </div>

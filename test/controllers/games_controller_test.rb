@@ -31,7 +31,12 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".cycle-pip", 8
     assert_select ".watch-marker.active", 1
     assert_select ".colony-pips[data-count='0']", 1
+    assert_select ".colony-pips i", 5
     assert_select ".colony-pips .is-goal", text: /LOCK/, count: 1
+    assert_select ".grid-stat", text: /DEFENSE GRID.*OFFLINE/m
+    assert_select "#grid-tooltip", /Fortress Protocol/
+    assert_select ".mandate-card", /Establish 5 Colonies/
+    assert_select ".mandate-card", /Complete a Doctrine/
     assert_select ".world-card", 3
     assert_select ".world-lane-label.inner-lane", /Inner Reach/
     assert_select ".world-lane-label.outer-lane", /Outer Reach/
@@ -85,6 +90,21 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".incoming-crisis.is-defended.is-averted", 1
     assert_select ".crisis-art-core", "✓"
     assert_select ".crisis-blocked-banner b", "CRISIS AVERTED"
+  end
+
+  test "an online grid keeps its name and shows when landing defense is armed" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["grid"] = true
+    state["colonized_worlds"] = %w[glass_sea rust_mesa]
+    state["colonies"] = 2
+    game.update!(state: state)
+
+    get game_path(game)
+
+    assert_response :success
+    assert_select ".grid-stat.online", text: /DEFENSE GRID.*ONLINE/m
+    assert_select "#grid-tooltip", /prevents immediate defeat/
   end
 
   test "playing a card moves it into the next command slot" do
@@ -201,9 +221,10 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
   test "a charted world is presented as a colonization target" do
     game = CinderReach::Engine.start!
-    world_key = game.state["system"].first
+    world_key = "glass_sea"
     state = game.state
     state["phase"] = "action"
+    state["system"][0] = world_key
     state["surveyed_worlds"] = [ world_key ]
     state["supply"] = 10
     game.update!(state: state)

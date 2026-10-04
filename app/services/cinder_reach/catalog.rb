@@ -29,12 +29,12 @@ module CinderReach
     }.freeze
 
     WORLDS = {
-      "rust_mesa" => { name: "Rust Mesa", ring: "inner", survey: 2, colony: 5, survey_text: "+2 Supply", colony_text: "Outpost · Stability +1", flavor: "Iron dust veils a patient, buried biosphere." },
+      "rust_mesa" => { name: "Rust Mesa", ring: "inner", survey: 2, colony: 5, requires_all: %w[ind_salvage], survey_text: "+2 Supply", colony_text: "Outpost · Stability +1", flavor: "Iron dust veils a patient, buried biosphere." },
       "glass_sea" => { name: "Glass Sea", ring: "inner", survey: 1, colony: 4, survey_text: "Reinforce Support", colony_text: "Outpost", flavor: "A frozen ocean rings beneath the survey lights." },
-      "pale_garden" => { name: "Pale Garden", ring: "inner", survey: 2, colony: 4, survey_text: "Stability +1", colony_text: "Outpost · Scrap an Unrest", flavor: "Something tends these colorless groves." },
-      "red_choir" => { name: "Red Choir", ring: "outer", survey: 3, colony: 6, requires_any: %w[nav_probes def_analysis], survey_text: "Fleet −1", colony_text: "Outpost · Fleet −1 each cycle", flavor: "Radio storms sing in a language the Fleet fears." },
-      "vault_orbit" => { name: "Vault Orbit", ring: "outer", survey: 4, colony: 7, requires_any: %w[nav_probes ind_salvage], survey_text: "Next Lab costs 2 less", colony_text: "Outpost · +1 Data each cycle", flavor: "A dead civilization left one door unlocked." },
-      "black_relay" => { name: "Black Relay", ring: "outer", survey: 4, colony: 7, requires_any: %w[def_analysis civ_mesh], survey_text: "Reorder the next 2 crises", colony_text: "Outpost · Deep Intel · Grid on or Fleet −1", flavor: "Its signal arrives before it is transmitted." }
+      "pale_garden" => { name: "Pale Garden", ring: "inner", survey: 2, colony: 4, requires_all: %w[civ_mesh], survey_text: "Stability +1", colony_text: "Outpost · Scrap an Unrest", flavor: "Something tends these colorless groves." },
+      "red_choir" => { name: "Red Choir", ring: "outer", survey: 3, colony: 6, requires_all: %w[nav_probes def_analysis], survey_text: "Fleet −1", colony_text: "Outpost · Fleet −1 each cycle", flavor: "Radio storms sing in a language the Fleet fears." },
+      "vault_orbit" => { name: "Vault Orbit", ring: "outer", survey: 4, colony: 7, requires_all: %w[nav_probes ind_salvage], survey_text: "Next Lab costs 2 less", colony_text: "Outpost · +1 Data each cycle", flavor: "A dead civilization left one door unlocked." },
+      "black_relay" => { name: "Black Relay", ring: "outer", survey: 4, colony: 7, requires_all: %w[def_analysis civ_mesh], survey_text: "Reorder the next 2 crises", colony_text: "Outpost · Deep Intel · Grid on or Fleet −1", flavor: "Its signal arrives before it is transmitted." }
     }.freeze
 
     EVENTS = {
@@ -98,44 +98,48 @@ module CinderReach
       "navigation" => {
         name: "Navigation", symbol: "⌁", tags: %w[SURVEY LAB],
         nodes: [
-          { key: "nav_probes", name: "Long-range Probes", cost: 2, tags: 1, text: "All surveys cost 1 less Data." },
+          { key: "nav_probes", name: "Long-range Probes", cost: 2, tags: 1, text: "All surveys cost 1 less Data. Access key for Red Choir and Vault Orbit." },
           { key: "nav_xenology", name: "Xenology Corps", cost: 4, tags: 1, parent: "nav_probes", exclusive: "nav_route", text: "First-time surveys recover 1 Data." },
           { key: "nav_gateways", name: "Gate Cartography", cost: 4, tags: 1, parent: "nav_probes", exclusive: "nav_route", text: "All colonies cost 1 less Supply." },
-          { key: "nav_living_atlas", name: "Living Atlas", cost: 7, tags: 2, parent: "nav_xenology", text: "Begin each cycle with Data for charted worlds, up to 3." },
-          { key: "nav_slipstream", name: "Slipstream Doctrine", cost: 7, tags: 2, parent: "nav_gateways", text: "Your first world action each cycle is free." }
+          { key: "nav_living_atlas", name: "Deep-space Atlas", cost: 7, tags: 2, parent: "nav_xenology", capstone: true, text: "Outer Reach surveys cost 2 less Data." },
+          { key: "nav_slipstream", name: "Slipstream Doctrine", cost: 7, tags: 2, parent: "nav_gateways", capstone: true, text: "Your first world action each cycle is free." }
         ]
       },
       "industry" => {
         name: "Industry", symbol: "⬡", tags: %w[COLONY LAB],
         nodes: [
-          { key: "ind_salvage", name: "Salvage Economy", cost: 2, tags: 1, text: "Reach cards cost 1 less Supply." },
+          { key: "ind_salvage", name: "Salvage Economy", cost: 2, tags: 1, text: "Reach cards cost 1 less Supply. Access key for Rust Mesa and Vault Orbit." },
           { key: "ind_automation", name: "Closed-loop Works", cost: 4, tags: 1, parent: "ind_salvage", exclusive: "ind_route", text: "Bank up to 2 unspent Supply between cycles." },
           { key: "ind_precision", name: "Precision Logistics", cost: 4, tags: 1, parent: "ind_salvage", exclusive: "ind_route", text: "Purchased cards go on top of your deck." },
-          { key: "ind_replicator", name: "Matter Replicator", cost: 7, tags: 2, parent: "ind_automation", text: "Begin each cycle with 3 additional Supply." },
-          { key: "ind_forge", name: "Orbital Forge", cost: 7, tags: 2, parent: "ind_precision", text: "Your first purchase each cycle is a free action." }
+          { key: "ind_replicator", name: "Matter Replicator", cost: 7, tags: 2, parent: "ind_automation", capstone: true, text: "Begin each cycle with 3 additional Supply." },
+          { key: "ind_forge", name: "Colony Foundry", cost: 7, tags: 2, parent: "ind_precision", capstone: true, text: "Outer Reach colonies cost 2 less Supply." }
         ]
       },
       "civics" => {
         name: "Civics", symbol: "◇", tags: %w[DECREE COLONY],
         nodes: [
-          { key: "civ_mesh", name: "Civic Mesh", cost: 2, tags: 1, text: "Prevent the first Unrest gained each cycle." },
+          { key: "civ_mesh", name: "Civic Mesh", cost: 2, tags: 1, text: "Prevent the first Unrest gained each cycle. Access key for Pale Garden and Black Relay." },
           { key: "civ_consensus", name: "Consensus Engine", cost: 4, tags: 1, parent: "civ_mesh", exclusive: "civ_route", text: "Prevent the first Stability loss each cycle." },
           { key: "civ_frontier", name: "Frontier Compact", cost: 4, tags: 1, parent: "civ_mesh", exclusive: "civ_route", text: "Colonizing grants 1 Data and 1 Stability." },
-          { key: "civ_unity", name: "Unity Protocol", cost: 7, tags: 2, parent: "civ_consensus", text: "A DECREE Command also counts as COLONY and FLEET." },
-          { key: "civ_beacon", name: "Beacon Commonwealth", cost: 7, tags: 2, parent: "civ_frontier", text: "Begin each cycle with 1 Supply per colony." }
+          { key: "civ_unity", name: "Unity Protocol", cost: 7, tags: 2, parent: "civ_consensus", capstone: true, text: "A DECREE Command also counts as COLONY and FLEET." },
+          { key: "civ_beacon", name: "Beacon Commonwealth", cost: 7, tags: 2, parent: "civ_frontier", capstone: true, text: "Begin each cycle with 1 Supply per colony." }
         ]
       },
       "defense" => {
         name: "Defense", symbol: "✦", tags: %w[FLEET LAB],
         nodes: [
-          { key: "def_analysis", name: "Signal Analysis", cost: 2, tags: 1, text: "See one crisis beyond the incoming signal." },
+          { key: "def_analysis", name: "Signal Analysis", cost: 2, tags: 1, text: "See one crisis beyond the incoming signal. Access key for Red Choir and Black Relay." },
           { key: "def_patrol", name: "Patrol Doctrine", cost: 4, tags: 1, parent: "def_analysis", exclusive: "def_route", text: "Any FLEET Command gains Intercept." },
           { key: "def_fortress", name: "Fortress Protocol", cost: 4, tags: 1, parent: "def_analysis", exclusive: "def_route", text: "Bring the Defense Grid online." },
-          { key: "def_hunters", name: "Hunter Groups", cost: 7, tags: 2, parent: "def_patrol", text: "Your first FLEET Command each cycle reduces Fleet by 1." },
-          { key: "def_aegis", name: "Aegis Network", cost: 7, tags: 2, parent: "def_fortress", text: "The Grid can hold Fleet 5 with only one colony." }
+          { key: "def_hunters", name: "Hunter Groups", cost: 7, tags: 2, parent: "def_patrol", capstone: true, text: "Your first FLEET Command each cycle reduces Fleet by 1." },
+          { key: "def_aegis", name: "Aegis Network", cost: 7, tags: 2, parent: "def_fortress", capstone: true, text: "At each new cycle, an online Grid reduces Fleet by 1." }
         ]
       }
     }.freeze
+
+    DOCTRINE_KEYS = TECH_TREES.values.flat_map do |tree|
+      tree[:nodes].select { |node| node[:capstone] }.map { |node| node[:key] }
+    end.freeze
 
     module_function
 

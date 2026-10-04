@@ -30,6 +30,13 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal "command", state["phase"]
   end
 
+  test "the lattice keeps twenty technologies and eight doctrine capstones" do
+    nodes = CinderReach::Catalog::TECH_TREES.values.flat_map { |tree| tree[:nodes] }
+
+    assert_equal 20, nodes.size
+    assert_equal 8, CinderReach::Catalog::DOCTRINE_KEYS.size
+  end
+
   test "silent protocol opens with a silent ping" do
     game = CinderReach::Engine.start!(difficulty: "silent")
 
@@ -147,6 +154,87 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_not game.engine.tech_available?("nav_gateways")
   end
 
+  test "five colonies and two outer settlements still require a completed doctrine" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["colonized_worlds"] = %w[rust_mesa glass_sea pale_garden red_choir vault_orbit]
+    state["colonies"] = 5
+    state["unlocked_tech"] = %w[nav_probes nav_gateways]
+    game.update!(state: state)
+
+    assert_not game.engine.mandate_met?
+
+    state = game.reload.state
+    state["unlocked_tech"] = state["unlocked_tech"] + [ "nav_slipstream" ]
+    game.update!(state: state)
+
+    refreshed_engine = CinderReach::Engine.new(game.reload)
+    assert refreshed_engine.mandate_met?
+    assert_equal [ "nav_slipstream" ], refreshed_engine.completed_doctrines
+  end
+
+  test "a sixth colony cannot be established" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "survey_decision"
+    state["surveyed_world"] = "black_relay"
+    state["surveyed_worlds"] = [ "black_relay" ]
+    state["colonized_worlds"] = %w[rust_mesa glass_sea pale_garden red_choir vault_orbit]
+    state["colonies"] = 5
+    state["supply"] = 10
+    game.update!(state: state)
+
+    error = assert_raises(CinderReach::InvalidMove) { game.engine.colonize!(relay_choice: "grid") }
+
+    assert_equal "Ark-9 can support only 5 Colonies", error.message
+    assert_equal 5, game.state["colonies"]
+    assert_not game.state["grid"]
+  end
+
+  test "legacy over-cap colony totals are treated as five" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["colonies"] = 6
+    game.update!(state: state)
+
+    assert_equal 5, game.engine.colony_count
+    assert game.engine.colony_capacity_reached?
+  end
+
+  test "finishing a doctrine locks the beacon when five colonies are ready" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "action"
+    state["colonized_worlds"] = %w[rust_mesa glass_sea pale_garden red_choir vault_orbit]
+    state["colonies"] = 5
+    state["unlocked_tech"] = %w[nav_probes nav_gateways]
+    state["played"] = %w[survey_probe field_lab]
+    state["data"] = 7
+    game.update!(state: state)
+
+    game.engine.research!("nav_slipstream")
+
+    assert_equal "won", game.reload.status
+    assert_equal "finished", game.state["phase"]
+    assert_match(/Five colonies/, game.state["outcome"])
+  end
+
+  test "capstone technologies accelerate outer expansion and grid defense" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["unlocked_tech"] = %w[nav_probes nav_living_atlas ind_forge def_aegis]
+    state["grid"] = true
+    state["fleet"] = 3
+    state["phase"] = "cleanup"
+    game.update!(state: state)
+
+    assert_equal 0, game.engine.effective_survey_cost("red_choir")
+    assert_equal 5, game.engine.effective_colony_cost("vault_orbit")
+
+    game.engine.cleanup!
+    assert_equal 2, game.state["fleet"]
+  end
+
   test "two actions advance the first watch and the crisis waits for the second" do
     game = CinderReach::Engine.start!
     incoming = game.state["incoming_crisis"]
@@ -223,6 +311,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     state["deep"] = [ "glass_sea" ]
     state["data"] = 2
     state["supply"] = 5
+    state["unlocked_tech"] = [ "ind_salvage" ]
     game.update!(state: state)
 
     engine = game.engine
@@ -249,6 +338,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     state["phase"] = "action"
     state["system"] = [ "pale_garden" ]
     state["data"] = 2
+    state["unlocked_tech"] = [ "civ_mesh" ]
     game.update!(state: state)
 
     engine = game.engine
@@ -344,12 +434,13 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 5, game.state["fleet"]
   end
 
-  test "the mandate deadline requires three colonies including an outer colony" do
+  test "the mandate deadline requires five colonies two outer colonies and a doctrine" do
     game = CinderReach::Engine.start!
     state = game.state
     state["cycle"] = 8
-    state["colonized_worlds"] = %w[rust_mesa glass_sea red_choir]
-    state["colonies"] = 3
+    state["colonized_worlds"] = %w[rust_mesa glass_sea pale_garden red_choir vault_orbit]
+    state["colonies"] = 5
+    state["unlocked_tech"] = %w[nav_probes nav_gateways nav_slipstream]
     state["phase"] = "cleanup"
     game.update!(state: state)
 
@@ -372,6 +463,10 @@ class CinderReachEngineTest < ActiveSupport::TestCase
 
     state = game.state
     state["unlocked_tech"] = [ "nav_probes" ]
+    game.update!(state: state)
+    assert_raises(CinderReach::InvalidMove) { game.engine.survey!(2) }
+
+    state["unlocked_tech"] << "def_analysis"
     game.update!(state: state)
     game.engine.survey!(2)
 

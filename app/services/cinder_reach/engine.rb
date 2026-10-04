@@ -4,6 +4,8 @@ module CinderReach
 
     COMMAND_LIMIT = 2
     ACTION_LIMIT = 2
+    COLONY_GOAL = 5
+    OUTER_COLONY_GOAL = 2
 
     def self.build_event_deck(difficulty)
       grouped = Catalog::EVENTS.keys.group_by { |key| Catalog.event(key)[:tone] }
@@ -52,7 +54,7 @@ module CinderReach
         "outer_survey_pending_completion" => false,
         "buy_discount" => 0, "survey_discount" => 0, "colony_discount" => 0, "research_discount" => 0,
         "vault_discount" => false, "intercept_used" => false, "stability_guard_used" => false,
-        "unrest_guard_used" => false, "hunter_used" => false, "world_action_used" => false, "free_buy_used" => false,
+        "unrest_guard_used" => false, "hunter_used" => false, "world_action_used" => false,
         "glimpse" => nil, "log" => [ "Cycle 1 · Watch I begins. Choose two Commands." ], "outcome" => nil
       }
       Game.create!(difficulty: difficulty, status: "playing", state: state)
@@ -71,16 +73,21 @@ module CinderReach
     def phase = state["phase"]
     def tech?(key) = state["unlocked_tech"].include?(key.to_s)
     def cycle_limit = state["cycle_limit"]
+    def colony_goal = COLONY_GOAL
+    def outer_colony_goal = OUTER_COLONY_GOAL
+    def colony_count = [ state["colonies"].to_i, COLONY_GOAL ].min
+    def colony_capacity_reached? = colony_count >= COLONY_GOAL
     def outer_colonies = state["colonized_worlds"].count { |key| world(key)[:ring] == "outer" }
-    def mandate_met? = state["colonies"] >= 3 && outer_colonies >= 1
+    def completed_doctrines = state["unlocked_tech"] & Catalog::DOCTRINE_KEYS
+    def doctrine_complete? = completed_doctrines.any?
+    def mandate_met? = colony_capacity_reached? && outer_colonies >= OUTER_COLONY_GOAL && doctrine_complete?
 
     def world_accessible?(key)
-      requirements = world(key)[:requires_any]
-      requirements.blank? || requirements.any? { |tech| tech?(tech) }
+      Array(world(key)[:requires_all]).all? { |tech| tech?(tech) }
     end
 
     def world_access_names(key)
-      Array(world(key)[:requires_any]).map { |tech| Catalog.tech_node(tech)[:name] }
+      Array(world(key)[:requires_all]).map { |tech| Catalog.tech_node(tech)[:name] }
     end
 
     def tags
@@ -149,11 +156,13 @@ module CinderReach
     end
 
     def effective_survey_cost(key)
-      [ world(key)[:survey] - state["survey_discount"] - (tech?("nav_probes") ? 1 : 0), 0 ].max
+      outer_atlas_discount = world(key)[:ring] == "outer" && tech?("nav_living_atlas") ? 2 : 0
+      [ world(key)[:survey] - state["survey_discount"] - (tech?("nav_probes") ? 1 : 0) - outer_atlas_discount, 0 ].max
     end
 
     def effective_colony_cost(key)
-      [ world(key)[:colony] - state["colony_discount"] - (tech?("nav_gateways") ? 1 : 0), 0 ].max
+      outer_foundry_discount = world(key)[:ring] == "outer" && tech?("ind_forge") ? 2 : 0
+      [ world(key)[:colony] - state["colony_discount"] - (tech?("nav_gateways") ? 1 : 0) - outer_foundry_discount, 0 ].max
     end
 
     def scrappable_cards
@@ -221,7 +230,7 @@ module CinderReach
       raise InvalidMove, "That System slot is empty" unless key
       info = world(key)
       unless world_accessible?(key)
-        raise InvalidMove, "Outer Reach access requires #{world_access_names(key).to_sentence(last_word_connector: ' or ')}"
+        raise InvalidMove, "World access requires #{world_access_names(key).to_sentence(last_word_connector: ' and ')}"
       end
 
       if state["surveyed_worlds"].include?(key)
@@ -278,6 +287,7 @@ module CinderReach
     def colonize!(relay_choice: nil)
       require_phase!("survey_decision")
       require_no_pending!
+      raise InvalidMove, "Ark-9 can support only #{COLONY_GOAL} Colonies" if colony_capacity_reached?
       key = state["surveyed_world"]
       info = world(key)
       colony_cost = effective_colony_cost(key)
@@ -396,7 +406,8 @@ module CinderReach
       state["research_discount"] = 0
       state["grid"] = true if node_key == "def_fortress"
       log!("#{node[:tree_name]} unlocked #{node[:name]}.")
-      complete_action!(type: "research")
+      check_beacon!
+      complete_action!(type: "research") if playing?
       save!
     end
 
@@ -501,18 +512,17 @@ module CinderReach
       state["unrest_guard_used"] = false
       state["hunter_used"] = false
       state["world_action_used"] = false
-      state["free_buy_used"] = false
       state["glimpse"] = nil
       state["cycle"] += 1
       if state["cycle"] > cycle_limit
-        mandate_met? ? win!("Mandate fulfilled. Ark-9 holds the Inner and Outer Reach.") : lose!("The mandate expired before three colonies, including one Outer colony, could be established.")
+        mandate_met? ? win!("Mandate fulfilled. Five colonies and a completed doctrine hold the Reach.") : lose!("The mandate expired before five colonies, two Outer settlements, and a completed doctrine could be secured.")
       else
         draw!(6)
         state["watch"] = 1
         state["actions"] = ACTION_LIMIT
         state["supply"] += 3 if tech?("ind_replicator")
-        state["supply"] += state["colonies"] if tech?("civ_beacon")
-        state["data"] += [ state["surveyed_worlds"].length, 3 ].min if tech?("nav_living_atlas")
+        state["supply"] += colony_count if tech?("civ_beacon")
+        adjust_fleet!(-1) if tech?("def_aegis") && state["grid"]
         if state["colonized_worlds"].include?("vault_orbit")
           state["data"] += 1
           log!("Vault Orbit archived +1 Data for the new cycle.")
@@ -530,7 +540,7 @@ module CinderReach
 
     def score
       owned = state.values_at("deck", "hand", "discard", "prepared", "played", "support").flatten
-      state["colonies"] * 3 + state["stability"] + (state["fleet"] <= 1 ? 2 : 0) +
+      colony_count * 3 + state["stability"] + (state["fleet"] <= 1 ? 2 : 0) +
         (state["grid"] ? 2 : 0) + state["unlocked_tech"].length + owned.count { |key| card(key)[:tag] == "LAB" } - owned.count("unrest")
     end
 
@@ -626,10 +636,8 @@ module CinderReach
     end
 
     def complete_action!(type:)
-      free = (type == "world" && tech?("nav_slipstream") && !state["world_action_used"]) ||
-        (type == "buy" && tech?("ind_forge") && !state["free_buy_used"])
+      free = type == "world" && tech?("nav_slipstream") && !state["world_action_used"]
       state["world_action_used"] = true if type == "world"
-      state["free_buy_used"] = true if type == "buy"
       if free
         log!("Technology made that a free action.")
       else
@@ -705,8 +713,7 @@ module CinderReach
       end
       state["fleet"] = [ [ state["fleet"] + amount, 0 ].max, 5 ].min
       if state["fleet"] >= 5
-        colonies_needed = tech?("def_aegis") ? 1 : 2
-        if state["colonies"] >= colonies_needed && state["grid"]
+        if state["colonies"] >= 2 && state["grid"]
           state["held"] = true
           log!("The Silent Fleet lands. The Grid holds.")
         else
@@ -796,7 +803,7 @@ module CinderReach
     end
 
     def check_beacon!
-      win!("Beacon lock achieved. Four colonies answer across the Reach.") if state["colonies"] >= 4 && state["fleet"] <= 4
+      win!("Beacon lock achieved. Five colonies answer through a completed doctrine.") if mandate_met? && state["fleet"] <= 4
     end
 
     def normalize_state!
@@ -820,7 +827,7 @@ module CinderReach
         state["surveyed_worlds"] << state["surveyed_world"]
       end
       %w[buy_discount survey_discount colony_discount research_discount].each { |key| state[key] ||= 0 }
-      %w[surveyed_this_action stability_guard_used unrest_guard_used hunter_used world_action_used free_buy_used intercept_used].each do |key|
+      %w[surveyed_this_action stability_guard_used unrest_guard_used hunter_used world_action_used intercept_used].each do |key|
         state[key] = false if state[key].nil?
       end
       state["incoming_crisis"] = state["crisis_deck"].shift unless state.key?("incoming_crisis")

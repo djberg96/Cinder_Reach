@@ -1,6 +1,6 @@
 <% content_for :title, "Cinder Reach — Solo Deck-Builder" %>
 
-<main class="landing-shell">
+<main class="landing-shell" data-controller="planet-ambience">
   <% if flash.any? %>
     <div class="flash-stack" role="status" aria-live="polite">
       <% flash.each do |type, message| %><div class="flash flash-<%= type %>"><span><%= message %></span></div><% end %>
@@ -62,9 +62,14 @@
   <aside class="planet-window" aria-hidden="true">
     <div class="orbit orbit-one"></div>
     <div class="orbit orbit-two"></div>
-    <div class="planet"><div class="planet-glow"></div></div>
+    <div class="planet-stage"><div class="planet"><div class="planet-glow"></div></div></div>
     <div class="ship ship-one">✦</div>
     <div class="ship ship-two">·</div>
     <div class="coordinate">CR-09<br>41.072° N<br>BEACON: WEAK</div>
   </aside>
+
+  <audio src="/audio/planet_deep_rumble.mp3" preload="auto" class="planet-audio-source" data-planet-ambience-target="audio" data-action="ended->planet-ambience#ended error->planet-ambience#failed"></audio>
+  <button type="button" class="planet-audio" data-planet-ambience-target="control" data-action="planet-ambience#toggle" aria-pressed="false">
+    <i aria-hidden="true"></i><span data-planet-ambience-target="label">Enable atmosphere</span>
+  </button>
 </main>

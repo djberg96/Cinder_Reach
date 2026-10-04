@@ -11,6 +11,11 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[value=prospect]"
     assert_select "input[value=mandate]"
     assert_select "input[value=silent]"
+    assert_select ".landing-shell[data-controller='planet-ambience']", 1
+    assert_select ".planet-stage .planet", 1
+    assert_select "audio.planet-audio-source[src='/audio/planet_deep_rumble.mp3'][data-planet-ambience-target='audio'][preload='auto']", 1
+    assert_select ".planet-audio[data-action='planet-ambience#toggle']", /atmosphere/i
+    assert Rails.public_path.join("audio/planet_deep_rumble.mp3").file?, "expected the atmosphere audio file to exist"
   end
 
   test "a new game renders the command board" do

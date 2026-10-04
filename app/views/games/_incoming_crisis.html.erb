@@ -1,18 +1,42 @@
-<% signal_key = @state["incoming_crisis"] %>
+  <% signal_key = @state["incoming_crisis"] %>
 <% if signal_key && %w[command action].include?(@state["phase"]) %>
   <% signal = crisis_data(signal_key) %>
+  <% display = signal[:display] %>
   <section class="incoming-crisis threat-<%= signal[:threat].downcase %>">
-    <div class="incoming-heading">
-      <span class="incoming-pulse" aria-hidden="true"></span>
-      <span class="micro-label">INCOMING AFTER YOUR ACTIONS</span>
+    <header class="crisis-card-header">
+      <span class="card-kind">CRISIS CARD</span>
       <b><%= signal[:threat] %></b>
+    </header>
+    <div class="crisis-card-art" aria-hidden="true">
+      <span class="crisis-art-orbit"></span>
+      <span class="crisis-art-core">!</span>
     </div>
-    <h2><%= signal[:name] %></h2>
-    <p><%= signal[:text] %></p>
-    <% if @engine.tech?("def_analysis") && @state["glimpse"].present? %>
-      <small>DEEP INTEL: <%= crisis_data(@state["glimpse"].first)[:name] %> follows.</small>
-    <% else %>
-      <small>Choose your cards with this threat in mind.</small>
-    <% end %>
+    <div class="crisis-card-copy">
+      <span class="incoming-status"><i class="incoming-pulse"></i>INCOMING AFTER YOUR ACTIONS</span>
+      <div class="crisis-title-row">
+        <h2><%= signal[:name] %></h2>
+        <span class="crisis-help" tabindex="0" aria-label="What is a crisis card?">?</span>
+        <span class="crisis-tooltip" role="tooltip"><b>CRISIS CARD</b>Resolves after your actions. Command tags can satisfy the block condition on the left; otherwise apply the effect on the right.</span>
+      </div>
+      <div class="crisis-effect <%= 'has-defense' if display[:defense] %>">
+        <% if display[:defense] %>
+          <span class="crisis-defense">
+            <i><%= display.dig(:defense, :symbol) %></i>
+            <span><small><%= display.dig(:defense, :caption) || "BLOCK WITH" %></small><b><%= display.dig(:defense, :label) %></b></span>
+          </span>
+          <span class="effect-or">OR</span>
+        <% end %>
+        <span class="effect-results">
+          <% display[:effects].each_with_index do |effect, index| %>
+            <% if index.positive? %><em><%= display[:join] || "AND" %></em><% end %>
+            <b><%= effect %></b>
+          <% end %>
+        </span>
+      </div>
+      <% if display[:note] %><span class="effect-note"><%= display[:note] %></span><% end %>
+      <% if @engine.tech?("def_analysis") && @state["glimpse"].present? %>
+        <span class="crisis-intel">DEEP INTEL · <%= crisis_data(@state["glimpse"].first)[:name] %> FOLLOWS</span>
+      <% end %>
+    </div>
   </section>
 <% end %>

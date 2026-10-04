@@ -38,16 +38,46 @@ module CinderReach
     }.freeze
 
     CRISES = {
-      "ration_riot" => { name: "Ration Riot", text: "Unless 2 COLONY tags are in command: Stability −1 and gain 1 Unrest.", threat: "COUNCIL" },
-      "admiralty_demand" => { name: "Admiralty Demand", text: "Unless a FLEET tag is in command: Fleet +1.", threat: "FLEET" },
-      "consortium_embargo" => { name: "Consortium Embargo", text: "Unless a DECREE tag is in command: Stability −1.", threat: "COUNCIL" },
-      "silent_ping" => { name: "Silent Ping", text: "Fleet +1.", threat: "SIGNAL" },
-      "council_fracture" => { name: "Council Fracture", text: "Unless a DECREE tag is in command: Stability −1 and gain 1 Unrest.", threat: "COUNCIL" },
-      "harvest_blight" => { name: "Harvest Blight", text: "Scrap a card from the table, or Stability −1.", threat: "COLONY" },
-      "probe_swarm" => { name: "Probe Swarm", text: "Unless a FLEET tag is in command: Fleet +1. If Fleet is then 3+, Stability −1.", threat: "FLEET" },
-      "refugee_wave" => { name: "Refugee Wave", text: "Gain 1 Unrest, then reinforce Support.", threat: "COLONY" },
-      "deep_signal" => { name: "Deep Signal", text: "See the next crisis. Then Fleet +1, unless you scrap a card from the table.", threat: "SIGNAL" },
-      "beacon_flicker" => { name: "Beacon Flicker", text: "If you have fewer than 2 Colonies: Stability −1 and Fleet +1.", threat: "SIGNAL" }
+      "ration_riot" => {
+        name: "Ration Riot", text: "Unless 2 COLONY tags are in command: Stability −1 and gain 1 Unrest.", threat: "COUNCIL",
+        display: { defense: { symbol: "⌂", label: "COLONY ×2" }, effects: [ "STABILITY −1", "UNREST +1" ], join: "AND" }
+      },
+      "admiralty_demand" => {
+        name: "Admiralty Demand", text: "Unless a FLEET tag is in command: Fleet +1.", threat: "FLEET",
+        display: { defense: { symbol: "✦", label: "FLEET" }, effects: [ "FLEET +1" ] }
+      },
+      "consortium_embargo" => {
+        name: "Consortium Embargo", text: "Unless a DECREE tag is in command: Stability −1.", threat: "COUNCIL",
+        display: { defense: { symbol: "◇", label: "DECREE" }, effects: [ "STABILITY −1" ] }
+      },
+      "silent_ping" => {
+        name: "Silent Ping", text: "Fleet +1.", threat: "SIGNAL",
+        display: { effects: [ "FLEET +1" ] }
+      },
+      "council_fracture" => {
+        name: "Council Fracture", text: "Unless a DECREE tag is in command: Stability −1 and gain 1 Unrest.", threat: "COUNCIL",
+        display: { defense: { symbol: "◇", label: "DECREE" }, effects: [ "STABILITY −1", "UNREST +1" ], join: "AND" }
+      },
+      "harvest_blight" => {
+        name: "Harvest Blight", text: "Scrap a card from the table, or Stability −1.", threat: "COLONY",
+        display: { effects: [ "SCRAP 1", "STABILITY −1" ], join: "OR" }
+      },
+      "probe_swarm" => {
+        name: "Probe Swarm", text: "Unless a FLEET tag is in command: Fleet +1. If Fleet is then 3+, Stability −1.", threat: "FLEET",
+        display: { defense: { symbol: "✦", label: "FLEET" }, effects: [ "FLEET +1" ], note: "FLEET 3+  →  STABILITY −1" }
+      },
+      "refugee_wave" => {
+        name: "Refugee Wave", text: "Gain 1 Unrest, then reinforce Support.", threat: "COLONY",
+        display: { effects: [ "UNREST +1", "REINFORCE" ], join: "THEN" }
+      },
+      "deep_signal" => {
+        name: "Deep Signal", text: "See the next crisis. Then Fleet +1, unless you scrap a card from the table.", threat: "SIGNAL",
+        display: { effects: [ "SCRAP 1", "FLEET +1" ], join: "OR", note: "REVEAL NEXT CRISIS" }
+      },
+      "beacon_flicker" => {
+        name: "Beacon Flicker", text: "If you have fewer than 2 Colonies: Stability −1 and Fleet +1.", threat: "SIGNAL",
+        display: { defense: { symbol: "⌂", label: "2 COLONIES", caption: "SAFE AT" }, effects: [ "STABILITY −1", "FLEET +1" ], join: "AND" }
+      }
     }.freeze
 
     TECH_TREES = {

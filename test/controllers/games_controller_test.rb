@@ -28,6 +28,11 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".strategy-row .technology-console", 1
     assert_select ".strategy-row .played-zone", 1
     assert_select ".incoming-crisis", 1
+    assert_select ".incoming-crisis .card-kind", "CRISIS CARD"
+    assert_select ".incoming-crisis .crisis-card-art", 1
+    assert_select ".incoming-crisis .crisis-effect", 1
+    assert_select ".incoming-crisis .effect-results b", minimum: 1
+    assert_select ".incoming-crisis .crisis-tooltip", /Resolves after your actions/
     assert_select ".tech-summary-row", 4
     assert_select ".tech-branch", 4
     assert_select ".tech-node", 20

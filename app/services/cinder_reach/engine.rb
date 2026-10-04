@@ -174,14 +174,19 @@ module CinderReach
 
       cost = effective_survey_cost(key)
       raise InvalidMove, "You need #{cost} Data" if state["data"] < cost
+      data_before = state["data"]
       state["data"] -= cost
       state["surveyed_worlds"] << key
       state["surveyed_world"] = key
       state["surveyed_this_action"] = true
       state["phase"] = "survey_decision"
-      log!("Surveyed #{info[:name]} for #{cost} Data.")
+      log!("Surveyed #{info[:name]} for #{cost} Data (#{data_before} → #{state['data']}).")
       resolve_survey_reward!(key)
-      state["data"] += 1 if tech?("nav_xenology")
+      if tech?("nav_xenology")
+        data_before = state["data"]
+        state["data"] += 1
+        log!("Xenology Corps recovered 1 Data (#{data_before} → #{state['data']}).")
+      end
       save!
     end
 
@@ -209,7 +214,9 @@ module CinderReach
         raise InvalidMove, "Choose the Relay's colony benefit"
       end
 
+      supply_before = state["supply"]
       state["supply"] -= colony_cost
+      supply_after_payment = state["supply"]
       state["discard"] << "outpost"
       state["colonies"] += 1
       slot = state["system"].index(key)
@@ -227,7 +234,7 @@ module CinderReach
         state["data"] += 1
         adjust_stability!(1)
       end
-      log!("Colonized #{info[:name]}. Colony #{state['colonies']} is online.")
+      log!("Colonized #{info[:name]} for #{colony_cost} Supply (#{supply_before} → #{supply_after_payment}). Colony #{state['colonies']} is online.")
       check_beacon!
       complete_action!(type: "world") if playing?
       save!
@@ -444,14 +451,26 @@ module CinderReach
 
     def resolve_survey_reward!(key)
       case key
-      when "rust_mesa" then state["supply"] += 2
+      when "rust_mesa"
+        supply_before = state["supply"]
+        state["supply"] += 2
+        log!("Rust Mesa survey reward: +2 Supply (#{supply_before} → #{state['supply']}).")
       when "glass_sea" then reinforce_support!(1)
-      when "pale_garden" then adjust_stability!(1)
-      when "red_choir" then adjust_fleet!(-1)
-      when "vault_orbit" then state["vault_discount"] = true
+      when "pale_garden"
+        stability_before = state["stability"]
+        adjust_stability!(1)
+        log!("Pale Garden survey reward: Stability +1 (#{stability_before} → #{state['stability']}).")
+      when "red_choir"
+        fleet_before = state["fleet"]
+        adjust_fleet!(-1)
+        log!("Red Choir survey reward: Fleet −1 (#{fleet_before} → #{state['fleet']}).")
+      when "vault_orbit"
+        state["vault_discount"] = true
+        log!("Vault Orbit survey reward: the next LAB card costs 2 less Supply.")
       when "black_relay"
         state["pending_effect"] = "black_relay"
         state["glimpse"] = [ state["incoming_crisis"], state["crisis_deck"].first ].compact
+        log!("Black Relay survey reward: scanned the next 2 crisis signals.")
       end
     end
 

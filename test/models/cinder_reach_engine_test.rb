@@ -133,6 +133,8 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     engine.survey!(0)
     assert_equal 0, engine.state["data"]
     assert_equal 7, engine.state["supply"]
+    assert_includes engine.state["log"], "Surveyed Rust Mesa for 2 Data (2 → 0)."
+    assert_includes engine.state["log"], "Rust Mesa survey reward: +2 Supply (5 → 7)."
     engine.colonize!
 
     assert_equal 1, engine.state["colonies"]
@@ -142,6 +144,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal [ "glass_sea" ], engine.state["system"]
     assert_equal 1, engine.state["actions"]
     assert_equal "action", engine.state["phase"]
+    assert_includes engine.state["log"], "Colonized Rust Mesa for 5 Supply (7 → 2). Colony 1 is online."
   end
 
   test "a surveyed world stays charted and does not charge or reward twice" do

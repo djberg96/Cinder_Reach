@@ -24,6 +24,9 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".world-card", 3
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 5
+    assert_select ".board-tableau .tableau-panel", 2
+    assert_select ".strategy-row .technology-console", 1
+    assert_select ".strategy-row .played-zone", 1
     assert_select ".incoming-crisis", 1
     assert_select ".tech-track", 3
   end

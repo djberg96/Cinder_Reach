@@ -154,26 +154,32 @@
 
   <div class="board-grid">
     <section class="board-main <%= 'awaiting-first-card' if @state['phase'] == 'play' && @state['played'].empty? %>">
-      <div class="section-heading">
-        <div><span class="micro-label">VISIBLE SYSTEM</span><h2>Worlds in reach</h2></div>
-        <span class="deck-count"><b><%= @state["deep"].length %></b> WORLDS IN THE DEEP</span>
-      </div>
-      <div class="world-row">
-        <% @state["system"].each_with_index do |world_key, index| %>
-          <% if world_key %><%= render "world", world_key: world_key, index: index %><% end %>
-        <% end %>
-      </div>
+      <div class="board-tableau">
+        <section class="tableau-panel worlds-panel">
+          <div class="section-heading">
+            <div><span class="micro-label">VISIBLE SYSTEM</span><h2>Worlds in reach</h2></div>
+            <span class="deck-count"><b><%= @state["deep"].length %></b> WORLDS IN THE DEEP</span>
+          </div>
+          <div class="world-row">
+            <% @state["system"].each_with_index do |world_key, index| %>
+              <% if world_key %><%= render "world", world_key: world_key, index: index %><% end %>
+            <% end %>
+          </div>
+        </section>
 
-      <div class="section-heading reach-heading">
-        <div><span class="micro-label">MARKET</span><h2>The Reach</h2></div>
-        <span class="deck-count"><b><%= @state["market_deck"].length %></b> CARDS REMAIN</span>
-      </div>
-      <div class="card-row reach-row">
-        <% @state["reach"].each_with_index do |key, index| %>
-          <% next unless key %>
-          <% cost = effective_buy_cost(@state, key) %>
-          <%= render "card", card_key: key, cost: cost, index: index, buyable: @state["phase"] == "play", disabled: @state["supply"] < cost || @state["pending_effect"].present? %>
-        <% end %>
+        <section class="tableau-panel market-panel">
+          <div class="section-heading reach-heading">
+            <div><span class="micro-label">MARKET</span><h2>The Reach</h2></div>
+            <span class="deck-count"><b><%= @state["market_deck"].length %></b> CARDS REMAIN</span>
+          </div>
+          <div class="card-row reach-row">
+            <% @state["reach"].each_with_index do |key, index| %>
+              <% next unless key %>
+              <% cost = effective_buy_cost(@state, key) %>
+              <%= render "card", card_key: key, cost: cost, index: index, buyable: @state["phase"] == "play", disabled: @state["supply"] < cost || @state["pending_effect"].present? %>
+            <% end %>
+          </div>
+        </section>
       </div>
 
       <div class="strategy-row">

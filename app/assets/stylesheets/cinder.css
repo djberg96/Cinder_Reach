@@ -399,6 +399,39 @@ body { background:#aeb6ae; }
 .strategy-row .played-row { flex:1; }
 .strategy-row .played-card { min-width:138px; }
 
+@media(min-width:1500px){
+  .board-tableau { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); align-items:start; gap:12px; }
+  .board-tableau .section-heading { margin-top:9px; }
+  .board-tableau .reach-heading { margin-top:9px; }
+  .board-tableau .world-row { gap:7px; }
+  .board-tableau .world-card { min-height:225px; grid-template-columns:34% 66%; }
+  .board-tableau .world-sphere { width:145px; top:37px; left:-49px; }
+  .board-tableau .world-content { display:flex; min-width:0; flex-direction:column; padding:15px 12px 10px 2px; }
+  .board-tableau .world-content h3 { margin:1px 0 5px; font-size:18px; }
+  .board-tableau .world-flavor { min-height:48px; white-space:normal; }
+  .board-tableau .world-content dl { margin-top:auto; }
+  .board-tableau .reach-row { grid-template-columns:repeat(4,minmax(0,1fr)); justify-content:stretch; gap:7px; padding:3px 0 7px; }
+  .board-tableau .reach-row .game-card { width:auto; min-width:0; min-height:225px; }
+  .crisis-panel { grid-template-columns:105px 1fr 180px; }
+  .crisis-art { min-height:118px; font-size:48px; }
+  .crisis-art:before { width:82px; height:82px; }
+  .crisis-art:after { width:54px; height:54px; }
+  .crisis-body { padding:13px 18px; }
+  .crisis-body h2 { margin:1px 0 3px; font-size:23px; }
+  .crisis-body p { margin-bottom:8px; }
+  .defense-readout { gap:5px; padding:14px 12px; }
+  .phase-crisis .board-tableau,.phase-crisis .technology-console { display:none; }
+  .phase-crisis .strategy-row { grid-template-columns:1fr; margin-top:7px; }
+  .phase-crisis .played-zone { min-height:118px; }
+  .phase-survey_decision .market-panel,.phase-survey_decision .technology-console { display:none; }
+  .phase-survey_decision .board-tableau,.phase-survey_decision .strategy-row { grid-template-columns:1fr; }
+  .phase-survey_decision .board-tableau .world-card { min-height:168px; }
+  .phase-survey_decision .board-tableau .world-sphere { top:10px; }
+  .has-pending-effect .board-tableau,.has-pending-effect .technology-console { display:none; }
+  .has-pending-effect .strategy-row { grid-template-columns:1fr; }
+  .phase-finished .board-grid,.phase-finished .hand-zone { display:none; }
+}
+
 @media(max-width:1100px){
   .orders-stat { border-bottom:1px solid var(--line); }
   .technology-console { margin-bottom:8px; }

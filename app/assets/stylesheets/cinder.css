@@ -542,6 +542,8 @@ body { background:#aeb6ae; }
   .hand-row .game-card:nth-of-type(4) { transform:rotate(.7deg); }
   .hand-row .game-card:nth-of-type(5) { transform:rotate(2deg) translateY(2px); }
   .hand-row .game-card:nth-of-type(6) { transform:rotate(3.5deg) translateY(6px); }
+  .hand-row .game-card:hover,
+  .hand-row .game-card:focus-within { z-index:30; transform:translateY(-18px) scale(1.5); box-shadow:0 6px 0 #596660,0 22px 34px rgba(22,33,29,.42); }
   .strategy-row { grid-template-columns:minmax(300px,.38fr) minmax(0,1.62fr); }
   .strategy-row .played-card { min-width:142px; width:142px; flex-basis:142px; }
   .strategy-row .played-card .card-copy { min-height:66px; }

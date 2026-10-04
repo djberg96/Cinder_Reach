@@ -760,7 +760,9 @@ body { background:#aeb6ae; }
 .tech-node-requirement.is-met span { color:#246f67; }
 .tech-node .tech-button { width:100%; min-height:35px; margin-top:8px; font-size:9px; }
 .tech-node.is-actionable { border-color:#24766e; box-shadow:0 0 0 2px rgba(39,121,112,.17); }
-.tech-node.is-actionable .tech-button { color:#fff; border-color:#226a62; background:#277970; }
+.tech-node.is-actionable .tech-button { cursor:pointer; color:#fff; border-color:#226a62; background:#277970; box-shadow:0 2px 0 rgba(24,83,76,.22); transition:background .16s ease,box-shadow .16s ease,transform .16s ease; }
+.tech-node.is-actionable .tech-button:hover { background:#195f58; box-shadow:0 3px 0 rgba(24,83,76,.28),0 6px 12px rgba(32,80,73,.14); transform:translateY(-1px); }
+.tech-node.is-actionable .tech-button:focus-visible { outline:2px solid #174f49; outline-offset:2px; background:#195f58; }
 .tech-node.is-unlocked { border-color:#267b77; background:#c5dad2; }
 .tech-node.is-unlocked .tech-node-top span { color:#17665f; font-weight:700; }
 

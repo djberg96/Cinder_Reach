@@ -479,13 +479,46 @@ body { background:#aeb6ae; }
 .effect-results>em { color:#93645b; font-family:var(--mono); font-size:7px; font-style:normal; font-weight:700; }
 .crisis-effect.has-defense .effect-results.multi-effect { flex-direction:column; gap:2px; }
 .crisis-effect:not(.has-defense) .effect-results { justify-content:flex-start; }
-.effect-note,.crisis-intel { display:block; margin-top:7px; color:#80483f; font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.03em; text-align:right; }
+.effect-note { display:block; margin-top:7px; color:#80483f; font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.03em; text-align:right; }
 .effect-note:before { content:"↳ "; color:var(--danger); }
 .crisis-readiness { display:flex; align-items:center; justify-content:space-between; gap:7px; margin-top:7px; border-top:1px solid #d0aaa1; padding-top:7px; }
 .crisis-readiness>small { color:#8c625a; font-family:var(--mono); font-size:7px; font-weight:700; letter-spacing:.08em; }
 .crisis-readiness>span { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; }
 .crisis-readiness b { border:1px solid #b88b81; border-radius:2px; padding:3px 4px; color:#754137; background:#ead8d1; font-family:var(--mono); font-size:7px; }
-.crisis-intel { border-top:1px solid #d0aaa1; padding-top:6px; color:#625c98; text-align:left; }
+.crisis-intel { position:relative; margin-top:8px; border-top:1px solid #d0aaa1; padding-top:8px; }
+.crisis-intel-trigger { min-height:39px; display:grid; grid-template-columns:27px minmax(0,1fr) auto; align-items:center; gap:8px; border:1px solid #aaa3c4; border-radius:4px; padding:5px 7px; cursor:help; color:#4e497f; background:linear-gradient(115deg,#e3deeb,#d7d3e2); box-shadow:0 2px 0 rgba(72,64,112,.12); }
+.crisis-intel-trigger>i { width:27px; height:27px; display:grid; place-items:center; border:1px solid #70699d; border-radius:50%; color:#fff; background:#655f9b; font-size:14px; font-style:normal; }
+.crisis-intel-trigger>span { min-width:0; }
+.crisis-intel-trigger small,.crisis-intel-trigger b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crisis-intel-trigger small { font-family:var(--mono); font-size:6px; font-weight:700; letter-spacing:.12em; }
+.crisis-intel-trigger b { margin-top:1px; color:#302d50; font-size:10px; }
+.crisis-intel-trigger>em { border:1px solid #aaa3c4; border-radius:10px; padding:2px 5px; font-family:var(--mono); font-size:6px; font-style:normal; font-weight:700; letter-spacing:.08em; }
+.crisis-intel-trigger:hover,.crisis-intel-trigger:focus-visible { border-color:#655f9b; outline:0; background:#ece8f1; box-shadow:0 0 0 2px rgba(101,95,155,.16),0 2px 0 rgba(72,64,112,.12); }
+.crisis-preview-card { --preview-accent:#ad4b40; --preview-soft:#dcc9c1; width:290px; visibility:hidden; position:absolute; z-index:90; right:calc(100% + 12px); bottom:0; overflow:hidden; border:1px solid var(--preview-accent); border-radius:7px; color:#2d302f; background:#f2ece6; box-shadow:0 13px 30px rgba(40,33,37,.3); opacity:0; transform:translateX(7px) scale(.98); transform-origin:right bottom; transition:opacity .14s ease,transform .14s ease,visibility .14s; }
+.crisis-preview-card.threat-signal { --preview-accent:#655f9b; --preview-soft:#c9c5d8; }
+.crisis-preview-card.threat-council { --preview-accent:#a8771d; --preview-soft:#d8cbae; }
+.crisis-preview-card.threat-colony { --preview-accent:#267b77; --preview-soft:#b9d0c9; }
+.crisis-intel:hover .crisis-preview-card,.crisis-intel:focus-within .crisis-preview-card { visibility:visible; opacity:1; transform:translateX(0) scale(1); }
+.crisis-preview-card>header { min-height:29px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--preview-accent); padding:6px 9px; color:var(--preview-accent); background:#ede4df; font-family:var(--mono); font-size:7px; font-weight:700; letter-spacing:.1em; }
+.crisis-preview-art { height:56px; position:relative; overflow:hidden; border-bottom:1px solid var(--preview-accent); background:radial-gradient(circle at 50% 50%,var(--preview-soft),transparent 42%),linear-gradient(145deg,#dedbd3,var(--preview-soft)); }
+.crisis-preview-art:before { content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0 6px,rgba(74,55,71,.045) 7px); }
+.crisis-preview-art>i { width:88px; height:27px; position:absolute; top:14px; left:calc(50% - 44px); border:1px solid var(--preview-accent); border-radius:50%; opacity:.65; transform:rotate(-12deg); }
+.crisis-preview-art>b { width:35px; height:35px; display:grid; position:absolute; top:10px; left:calc(50% - 18px); place-items:center; border-radius:50%; color:#fff; background:var(--preview-accent); box-shadow:0 0 0 6px color-mix(in srgb,var(--preview-accent) 16%,transparent); font-family:var(--display); font-size:20px; }
+.crisis-preview-copy { padding:9px 10px 10px; }
+.crisis-preview-copy h3 { margin:0 0 7px; font-family:var(--display); font-size:18px; letter-spacing:.02em; text-transform:uppercase; }
+.crisis-preview-effect { display:flex; align-items:center; gap:7px; border-top:1px solid color-mix(in srgb,var(--preview-accent) 35%,transparent); padding-top:7px; }
+.crisis-preview-effect>span:first-child { min-width:86px; }
+.crisis-preview-effect small,.crisis-preview-effect span>b { display:block; }
+.crisis-preview-effect small { color:#7a6d69; font-family:var(--mono); font-size:6px; letter-spacing:.07em; }
+.crisis-preview-effect span>b { color:var(--preview-accent); font-family:var(--mono); font-size:9px; }
+.preview-effect-results { display:flex; flex:1; flex-wrap:wrap; justify-content:flex-end; gap:3px; }
+.preview-effect-results>b { border:1px solid color-mix(in srgb,var(--preview-accent) 55%,transparent); border-radius:2px; padding:4px 5px; background:#eee1da; }
+.crisis-preview-copy p { margin:7px 0 0; color:#775047; font-family:var(--mono); font-size:7px; }
+
+@media(max-width:1100px){
+  .crisis-preview-card { right:0; bottom:auto; top:calc(100% + 7px); transform:translateY(-5px) scale(.98); transform-origin:right top; }
+  .crisis-intel:hover .crisis-preview-card,.crisis-intel:focus-within .crisis-preview-card { transform:translateY(0) scale(1); }
+}
 
 .technology-console { min-height:222px; display:flex; flex-direction:column; margin-top:8px; border:1px solid #687872; border-radius:5px; padding:10px; background:#ccd3cc; box-shadow:0 3px 0 rgba(55,69,63,.15); }
 .technology-heading { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:8px; }

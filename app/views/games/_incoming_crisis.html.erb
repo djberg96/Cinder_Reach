@@ -38,7 +38,29 @@
         <span class="crisis-readiness"><small>READINESS</small><span><% @engine.crisis_tags.tally.each do |tag, count| %><b><%= tag_symbol(tag) %> <%= tag %> ×<%= count %></b><% end %></span></span>
       <% end %>
       <% if @engine.tech?("def_analysis") && @state["glimpse"].present? %>
-        <span class="crisis-intel">DEEP INTEL · <%= crisis_data(@state["glimpse"].first)[:name] %> FOLLOWS</span>
+        <% next_signal = crisis_data(@state["glimpse"].first) %>
+        <% next_display = next_signal[:display] %>
+        <div class="crisis-intel">
+          <span class="crisis-intel-trigger" tabindex="0" aria-label="Preview next crisis: <%= next_signal[:name] %>">
+            <i>⌁</i>
+            <span><small>DEEP INTEL</small><b><%= next_signal[:name] %></b></span>
+            <em>NEXT</em>
+          </span>
+          <article class="crisis-preview-card threat-<%= next_signal[:threat].downcase %>" role="tooltip">
+            <header><span>NEXT CRISIS</span><b><%= next_signal[:threat] %></b></header>
+            <div class="crisis-preview-art" aria-hidden="true"><i></i><b>!</b></div>
+            <div class="crisis-preview-copy">
+              <h3><%= next_signal[:name] %></h3>
+              <div class="crisis-preview-effect">
+                <% if next_display[:defense] %>
+                  <span><small><%= next_display.dig(:defense, :caption) || "BLOCK WITH" %></small><b><%= next_display.dig(:defense, :label) %></b></span>
+                <% end %>
+                <span class="preview-effect-results"><% next_display[:effects].each do |effect| %><b><%= effect %></b><% end %></span>
+              </div>
+              <% if next_display[:note] %><p><%= next_display[:note] %></p><% end %>
+            </div>
+          </article>
+        </div>
       <% end %>
     </div>
   </section>

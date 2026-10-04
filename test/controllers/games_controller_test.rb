@@ -110,6 +110,22 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".played-zone .mission-advance-button", 0
   end
 
+  test "signal analysis previews the following crisis" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    next_crisis = state["crisis_deck"].first
+    state["unlocked_tech"] = [ "def_analysis" ]
+    state["glimpse"] = [ next_crisis ]
+    game.update!(state: state)
+
+    get game_path(game)
+
+    assert_response :success
+    assert_select ".crisis-intel-trigger", /DEEP INTEL/
+    assert_select ".crisis-preview-card h3", CinderReach::Catalog.crisis(next_crisis)[:name]
+    assert_select ".crisis-preview-card .preview-effect-results b", minimum: 1
+  end
+
   test "a charted world is presented as a colonization target" do
     game = CinderReach::Engine.start!
     world_key = game.state["system"].first

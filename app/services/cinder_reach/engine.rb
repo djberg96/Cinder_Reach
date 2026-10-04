@@ -5,12 +5,26 @@ module CinderReach
     COMMAND_LIMIT = 2
     ACTION_LIMIT = 2
 
+    def self.build_event_deck(difficulty)
+      grouped = Catalog::EVENTS.keys.group_by { |key| Catalog.event(key)[:tone] }
+      cards = case difficulty.to_s
+      when "prospect"
+        grouped.fetch("opportunity") + grouped.fetch("dilemma") + grouped.fetch("hazard").sample(2)
+      when "silent"
+        grouped.fetch("opportunity").sample(2) + grouped.fetch("dilemma") + grouped.fetch("hazard")
+      else
+        grouped.fetch("opportunity").sample(3) + grouped.fetch("dilemma") + grouped.fetch("hazard").sample(2)
+      end
+      cards.shuffle
+    end
+
     def self.start!(difficulty: "mandate")
       difficulty = difficulty.to_s
       raise InvalidMove, "Unknown difficulty" unless %w[prospect mandate silent].include?(difficulty)
 
       market = Catalog.expanded(Catalog::MARKET_COUNTS).shuffle
-      worlds = Catalog::WORLDS.keys.shuffle
+      inner_worlds = Catalog::WORLDS.keys.select { |key| Catalog.world(key)[:ring] == "inner" }.shuffle
+      outer_worlds = Catalog::WORLDS.keys.select { |key| Catalog.world(key)[:ring] == "outer" }.shuffle
       crises = Catalog::CRISES.keys.shuffle
       if difficulty == "silent"
         crises.delete("silent_ping")
@@ -18,17 +32,24 @@ module CinderReach
       end
 
       starter = ([ "colonist" ] * 4 + [ "survey_probe" ] * 3 + [ "militia" ] * 3 + [ "charter" ] * 2).shuffle
+      event_deck = build_event_deck(difficulty)
+      cycle_limit = difficulty == "prospect" ? 10 : 8
       state = {
-        "rules_version" => 3,
+        "rules_version" => 4,
         "cycle" => 1, "watch" => 1, "stability" => difficulty == "prospect" ? 6 : 5,
         "fleet" => difficulty == "silent" ? 1 : 0, "colonies" => 0,
+        "colonized_worlds" => [], "cycle_limit" => cycle_limit,
         "grid" => false, "held" => false, "supply" => 0, "data" => 0, "actions" => ACTION_LIMIT,
         "unlocked_tech" => [],
         "deck" => starter.drop(6), "hand" => starter.first(6), "discard" => [], "played" => [], "support" => [], "prepared" => [], "scrapped" => [],
         "market_deck" => market.drop(4), "reach" => market.first(4),
-        "deep" => worlds.drop(3), "system" => worlds.first(3), "surveyed_worlds" => [],
+        "inner_deep" => inner_worlds.drop(2), "outer_deep" => outer_worlds.drop(1),
+        "deep" => inner_worlds.drop(2) + outer_worlds.drop(1),
+        "system" => inner_worlds.first(2) + outer_worlds.first(1), "surveyed_worlds" => [],
         "crisis_deck" => crises.drop(1), "crisis_discard" => [], "incoming_crisis" => crises.first, "current_crisis" => nil,
+        "event_deck" => event_deck, "event_discard" => [], "current_event" => nil,
         "phase" => "command", "surveyed_world" => nil, "surveyed_this_action" => false, "pending_effect" => nil,
+        "outer_survey_pending_completion" => false,
         "buy_discount" => 0, "survey_discount" => 0, "colony_discount" => 0, "research_discount" => 0,
         "vault_discount" => false, "intercept_used" => false, "stability_guard_used" => false,
         "unrest_guard_used" => false, "hunter_used" => false, "world_action_used" => false, "free_buy_used" => false,
@@ -49,6 +70,18 @@ module CinderReach
     def playing? = game.status == "playing"
     def phase = state["phase"]
     def tech?(key) = state["unlocked_tech"].include?(key.to_s)
+    def cycle_limit = state["cycle_limit"]
+    def outer_colonies = state["colonized_worlds"].count { |key| world(key)[:ring] == "outer" }
+    def mandate_met? = state["colonies"] >= 3 && outer_colonies >= 1
+
+    def world_accessible?(key)
+      requirements = world(key)[:requires_any]
+      requirements.blank? || requirements.any? { |tech| tech?(tech) }
+    end
+
+    def world_access_names(key)
+      Array(world(key)[:requires_any]).map { |tech| Catalog.tech_node(tech)[:name] }
+    end
 
     def tags
       tags_for(state["played"])
@@ -168,6 +201,9 @@ module CinderReach
       key = state["system"][Integer(index)]
       raise InvalidMove, "That System slot is empty" unless key
       info = world(key)
+      unless world_accessible?(key)
+        raise InvalidMove, "Outer Reach access requires #{world_access_names(key).to_sentence(last_word_connector: ' or ')}"
+      end
 
       if state["surveyed_worlds"].include?(key)
         colony_cost = effective_colony_cost(key)
@@ -195,6 +231,14 @@ module CinderReach
         state["data"] += 1
         log!("Xenology Corps recovered 1 Data (#{data_before} → #{state['data']}).")
       end
+      if info[:ring] == "outer"
+        log!("#{info[:name]} is charted. Outer worlds require a later action to colonize.")
+        if state["pending_effect"]
+          state["outer_survey_pending_completion"] = true
+        else
+          finish_outer_survey_action!
+        end
+      end
       save!
     end
 
@@ -208,6 +252,7 @@ module CinderReach
       state["pending_effect"] = nil
       state["glimpse"] = nil
       log!("Black Relay fixed #{crisis(chosen)[:name]} as the next signal.")
+      finish_outer_survey_action! if state.delete("outer_survey_pending_completion")
       save!
     end
 
@@ -226,9 +271,14 @@ module CinderReach
       state["supply"] -= colony_cost
       supply_after_payment = state["supply"]
       state["discard"] << "outpost"
-      state["colonies"] += 1
+      state["colonized_worlds"] << key
+      state["colonies"] = state["colonized_worlds"].length
       slot = state["system"].index(key)
-      state["system"][slot] = state["deep"].shift if slot
+      if slot
+        replacement_deck = info[:ring] == "outer" ? state["outer_deep"] : state["inner_deep"]
+        state["system"][slot] = replacement_deck.shift
+        sync_deep!
+      end
       state["surveyed_worlds"].delete(key)
       state["surveyed_world"] = nil
       state["surveyed_this_action"] = false
@@ -245,6 +295,59 @@ module CinderReach
       log!("Colonized #{info[:name]} for #{colony_cost} Supply (#{supply_before} → #{supply_after_payment}). Colony #{state['colonies']} is online.")
       check_beacon!
       complete_action!(type: "world") if playing?
+      save!
+    end
+
+    def resolve_event!(choice:)
+      require_phase!("event")
+      key = state["current_event"]
+      raise InvalidMove, "There is no midwatch event to resolve" unless key
+      info = Catalog.event(key)
+      choice = choice.to_s
+      raise InvalidMove, "Choose how to resolve the event" unless info[:choices].key?(choice)
+
+      case [ key, choice ]
+      when [ "salvage_drift", "salvage" ]
+        state["supply"] += 2
+      when [ "quiet_signal", "archive" ]
+        state["data"] += 2
+      when [ "fleet_diversion", "observe" ]
+        adjust_fleet!(-1)
+      when [ "steady_hands", "rally" ]
+        adjust_stability!(1)
+      when [ "relief_convoy", "receive" ]
+        reinforce_support!(1)
+      when [ "emergency_levy", "accept" ]
+        state["supply"] += 3
+        gain_unrest!
+      when [ "emergency_levy", "decline" ]
+        nil
+      when [ "frontier_grant", "supply" ]
+        state["supply"] += 3
+      when [ "frontier_grant", "data" ]
+        state["data"] += 2
+      when [ "colonial_petition", "unity" ]
+        adjust_stability!(1)
+      when [ "colonial_petition", "research" ]
+        state["data"] += 1
+      when [ "labor_dispute", "stores" ]
+        state["supply"] = [ state["supply"] - 2, 0 ].max
+      when [ "labor_dispute", "council" ]
+        adjust_stability!(-1)
+      when [ "data_corruption", "purge" ]
+        state["data"] = [ state["data"] - 1, 0 ].max
+      when [ "data_corruption", "conceal" ]
+        gain_unrest!
+      when [ "market_shock", "cycle" ]
+        state["market_deck"].concat(state["reach"].compact).shuffle!
+        state["reach"] = 4.times.map { state["market_deck"].shift }
+      end
+
+      return save! unless playing?
+      log!("Midwatch: #{info[:name]} — #{info[:choices][choice]}.")
+      state["event_discard"] << key
+      state["current_event"] = nil
+      begin_second_watch!
       save!
     end
 
@@ -382,8 +485,8 @@ module CinderReach
       state["free_buy_used"] = false
       state["glimpse"] = nil
       state["cycle"] += 1
-      if state["cycle"] > 10
-        state["colonies"] >= 2 ? win!("Mandate fulfilled. Ark-9 survives the tenth cycle.") : lose!("The mandate expired before two colonies could be established.")
+      if state["cycle"] > cycle_limit
+        mandate_met? ? win!("Mandate fulfilled. Ark-9 holds the Inner and Outer Reach.") : lose!("The mandate expired before three colonies, including one Outer colony, could be established.")
       else
         draw!(6)
         state["watch"] = 1
@@ -391,6 +494,14 @@ module CinderReach
         state["supply"] += 3 if tech?("ind_replicator")
         state["supply"] += state["colonies"] if tech?("civ_beacon")
         state["data"] += [ state["surveyed_worlds"].length, 3 ].min if tech?("nav_living_atlas")
+        if state["colonized_worlds"].include?("vault_orbit")
+          state["data"] += 1
+          log!("Vault Orbit archived +1 Data for the new cycle.")
+        end
+        if state["colonized_worlds"].include?("red_choir")
+          adjust_fleet!(-1)
+          log!("Red Choir drew the Silent Fleet away by 1.")
+        end
         state["phase"] = "command"
         refresh_intel!
         log!("Cycle #{state['cycle']} · Watch I begins. Choose two Commands.")
@@ -405,6 +516,17 @@ module CinderReach
     end
 
     private
+
+    def finish_outer_survey_action!
+      state["surveyed_world"] = nil
+      state["surveyed_this_action"] = false
+      state["outer_survey_pending_completion"] = false
+      complete_action!(type: "world")
+    end
+
+    def sync_deep!
+      state["deep"] = Array(state["inner_deep"]) + Array(state["outer_deep"])
+    end
 
     def require_action!
       require_phase!("action")
@@ -499,7 +621,19 @@ module CinderReach
     end
 
     def advance_watch!
-      state["watch"] == 1 ? begin_second_watch! : begin_crisis!
+      state["watch"] == 1 ? begin_event! : begin_crisis!
+    end
+
+    def begin_event!
+      state["actions"] = 0
+      state["phase"] = "event"
+      state["current_event"] = state["event_deck"].shift
+      if state["current_event"]
+        info = Catalog.event(state["current_event"])
+        log!("Midwatch event: #{info[:name]}.")
+      else
+        begin_second_watch!
+      end
     end
 
     def begin_second_watch!
@@ -638,7 +772,8 @@ module CinderReach
     end
 
     def refresh_intel!
-      state["glimpse"] = tech?("def_analysis") ? [ state["crisis_deck"].first ].compact : nil
+      deep_intel = tech?("def_analysis") || state["colonized_worlds"].include?("black_relay")
+      state["glimpse"] = deep_intel ? [ state["crisis_deck"].first ].compact : nil
     end
 
     def check_beacon!
@@ -648,6 +783,7 @@ module CinderReach
     def normalize_state!
       migrate_legacy_state! if state["rules_version"].to_i < 2
       migrate_two_watch_state! if state["rules_version"].to_i < 3
+      migrate_frontier_state! if state["rules_version"].to_i < 4
       state["unlocked_tech"] ||= []
       state["support"] ||= []
       state["prepared"] ||= []
@@ -655,6 +791,12 @@ module CinderReach
       state["data"] ||= 0
       state["actions"] ||= ACTION_LIMIT
       state["surveyed_worlds"] ||= []
+      state["colonized_worlds"] ||= []
+      state["cycle_limit"] ||= game.difficulty == "prospect" ? 10 : 8
+      state["event_deck"] ||= self.class.build_event_deck(game.difficulty)
+      state["event_discard"] ||= []
+      state["current_event"] = nil unless state.key?("current_event")
+      state["outer_survey_pending_completion"] = false if state["outer_survey_pending_completion"].nil?
       if state["surveyed_world"] && !state["surveyed_worlds"].include?(state["surveyed_world"])
         state["surveyed_worlds"] << state["surveyed_world"]
       end
@@ -698,6 +840,24 @@ module CinderReach
       state["watch"] = %w[crisis cleanup finished].include?(state["phase"]) ? 2 : 1
       state["prepared"] = []
       state["rules_version"] = 3
+    end
+
+    def migrate_frontier_state!
+      remaining = (Array(state["system"]) + Array(state["deep"])).compact.uniq
+      state["colonized_worlds"] = Catalog::WORLDS.keys - remaining
+      inner = remaining.select { |key| world(key)[:ring] == "inner" }
+      outer = remaining.select { |key| world(key)[:ring] == "outer" }
+      state["system"] = [ inner.shift, inner.shift, outer.shift ]
+      state["inner_deep"] = inner
+      state["outer_deep"] = outer
+      sync_deep!
+      state["colonies"] = state["colonized_worlds"].length
+      state["cycle_limit"] = 10
+      state["event_deck"] = self.class.build_event_deck(game.difficulty)
+      state["event_discard"] = []
+      state["current_event"] = nil
+      state["outer_survey_pending_completion"] = false
+      state["rules_version"] = 4
     end
 
     def win!(message)

@@ -23,7 +23,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".command-strip"
     assert_select ".header-menu .header-drawer", 3
     assert_select ".mission-sidebar .cycle-panel", 1
-    assert_select ".cycle-pip", 10
+    assert_select ".cycle-pip", 8
     assert_select ".watch-marker.active", 1
     assert_select ".colony-pips[data-count='0']", 1
     assert_select ".colony-pips .is-goal", text: /LOCK/, count: 1
@@ -110,6 +110,23 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".played-zone .mission-advance-button", 0
   end
 
+  test "midwatch event presents its effect choices" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "event"
+    state["actions"] = 0
+    state["current_event"] = "emergency_levy"
+    game.update!(state: state)
+
+    get game_path(game)
+
+    assert_response :success
+    assert_select ".event-panel.event-dilemma", 1
+    assert_select ".event-panel h2", "Emergency Levy"
+    assert_select ".event-actions form", 2
+    assert_select ".incoming-crisis", 0
+  end
+
   test "signal analysis previews the following crisis" do
     game = CinderReach::Engine.start!
     state = game.state
@@ -138,7 +155,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     get game_path(game)
 
     assert_response :success
-    assert_select ".world-card.is-surveyed .micro-label", "SURVEYED WORLD"
+    assert_select ".world-card.is-surveyed .micro-label", /CHARTED .* WORLD/
     assert_select ".world-card.is-surveyed .world-action-label", /COLONIZE/
   end
 end

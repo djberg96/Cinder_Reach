@@ -753,3 +753,45 @@ body { background:#aeb6ae; }
   .header-drawer { position:static; }
   .header-drawer>.mandate-card,.header-drawer>.log-card,.header-drawer>.rules-content { width:auto; position:fixed; top:92px; right:10px; left:10px; transform:none; }
 }
+
+/* Strategic frontier: Inner/Outer worlds and the midwatch incident layer. */
+.world-ring-badge { position:absolute; top:9px; right:10px; border:1px solid #89958f; border-radius:10px; padding:2px 6px; color:#68756f; background:rgba(231,231,223,.82); font-family:var(--mono); font-size:6px; font-weight:700; letter-spacing:.08em; }
+.world-outer { border-color:#716b8d; background:linear-gradient(110deg,#d5d9d4,#dedce4); box-shadow:0 3px 0 rgba(76,70,105,.26); }
+.world-outer .world-art:after { background:linear-gradient(90deg,transparent 55%,#dedce4),repeating-linear-gradient(0deg,transparent 0 6px,rgba(65,58,98,.055) 7px); }
+.world-outer .world-ring-badge { color:#514a7d; border-color:#817aa6; background:#e6e2f2; }
+.world-access { display:block; min-height:24px; margin-top:3px; color:#794f48; font-family:var(--mono); font-size:6px; line-height:1.35; text-transform:uppercase; }
+.world-access b { display:block; color:#a24736; font-size:7px; letter-spacing:.08em; }
+.world-access.is-open { color:#575274; }
+.world-access.is-open b { color:#655d98; }
+.world-card.is-locked { filter:saturate(.55); }
+.world-card.is-locked:before { content:"TECH LOCK"; position:absolute; z-index:6; top:0; left:0; border-radius:4px 0 4px 0; padding:3px 7px; color:#fff; background:#625b7e; font-family:var(--mono); font-size:7px; font-weight:700; letter-spacing:.08em; }
+.world-card.is-locked .world-action-label { color:#fff; border-color:#625b7e; background:#716a8b; }
+
+.event-panel { min-height:174px; display:grid; grid-template-columns:132px minmax(0,1fr) minmax(210px,auto); align-items:center; gap:22px; overflow:hidden; margin:12px clamp(18px,3vw,48px); border:1px solid #766d98; border-radius:6px; background:linear-gradient(105deg,#d8d4e5,#eeeae1 58%); box-shadow:0 5px 0 rgba(72,66,98,.35),0 18px 45px rgba(37,47,43,.18); }
+.event-sigil { height:100%; display:grid; place-items:center; position:relative; border-right:1px solid rgba(93,84,133,.35); background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(77,69,117,.04) 8px); }
+.event-sigil:before,.event-sigil:after { content:""; width:88px; height:88px; position:absolute; border:1px solid rgba(91,82,135,.3); border-radius:50%; }
+.event-sigil:after { width:58px; height:58px; }
+.event-sigil span { width:52px; height:52px; display:grid; z-index:1; place-items:center; border-radius:50%; color:#fff; background:#625a91; font-family:var(--display); font-size:28px; box-shadow:0 0 0 10px rgba(98,90,145,.12); }
+.event-copy { padding:20px 0; }
+.event-copy .micro-label { color:#5e5880; }
+.event-copy h2 { margin:3px 0 7px; font-family:var(--display); font-size:32px; letter-spacing:.025em; text-transform:uppercase; }
+.event-copy p { margin:0 0 10px; color:#46534f; font-size:15px; }
+.event-copy>small { color:#68736f; font-family:var(--mono); font-size:8px; letter-spacing:.04em; }
+.event-actions { display:flex; min-width:230px; flex-direction:column; gap:8px; padding:20px 22px 20px 0; }
+.event-actions form,.event-actions button { width:100%; }
+.event-opportunity { border-color:#3c8177; background:linear-gradient(105deg,#cfe3dc,#eeeae1 58%); box-shadow:0 5px 0 rgba(49,111,101,.35),0 18px 45px rgba(37,47,43,.18); }
+.event-opportunity .event-sigil { border-color:rgba(39,121,112,.35); }
+.event-opportunity .event-sigil span { background:#277970; box-shadow:0 0 0 10px rgba(39,121,112,.12); }
+.event-opportunity .event-copy .micro-label { color:#236b63; }
+.event-hazard { border-color:#b2523e; background:linear-gradient(105deg,#efd3ca,#eeeae1 58%); box-shadow:0 5px 0 rgba(143,65,51,.5),0 18px 45px rgba(37,47,43,.18); }
+.event-hazard .event-sigil { border-color:rgba(178,82,62,.38); }
+.event-hazard .event-sigil span { background:#b34f3d; box-shadow:0 0 0 10px rgba(179,79,61,.13); }
+.event-hazard .event-copy .micro-label { color:#944332; }
+.phase-event .board-grid { opacity:.42; filter:saturate(.55); pointer-events:none; }
+.cycle-grid-8 { grid-template-columns:repeat(4,1fr); }
+
+@media(max-width:820px){
+  .event-panel { grid-template-columns:84px 1fr; gap:12px; }
+  .event-actions { grid-column:1/-1; width:100%; padding:0 14px 14px; }
+  .event-sigil { min-height:125px; }
+}

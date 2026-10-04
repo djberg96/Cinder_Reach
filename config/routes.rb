@@ -18,6 +18,7 @@ Rails.application.routes.draw do
       post :purge
       post :research
       post :end_actions
+      post :resolve_event
       post :resolve_crisis
       post :cleanup
     end

@@ -18,6 +18,9 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 19, state["market_deck"].size
     assert_equal 3, state["system"].size
     assert_equal 3, state["deep"].size
+    assert_equal %w[inner inner outer], state["system"].map { |key| CinderReach::Catalog.world(key)[:ring] }
+    assert_equal 8, state["cycle_limit"]
+    assert_equal 8, state["event_deck"].size
     assert_empty state["surveyed_worlds"]
     assert_empty state["unlocked_tech"]
     assert_empty state["support"]
@@ -34,6 +37,13 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal "silent_ping", game.state["incoming_crisis"]
   end
 
+  test "standard event deck mixes opportunities dilemmas and hazards" do
+    game = CinderReach::Engine.start!(difficulty: "mandate")
+    tones = game.state["event_deck"].map { |key| CinderReach::Catalog.event(key)[:tone] }.tally
+
+    assert_equal({ "opportunity" => 3, "dilemma" => 3, "hazard" => 2 }, tones)
+  end
+
   test "an existing game enters the two watch rules safely" do
     game = CinderReach::Engine.start!
     state = game.state
@@ -44,9 +54,10 @@ class CinderReachEngineTest < ActiveSupport::TestCase
 
     engine = CinderReach::Engine.new(game)
 
-    assert_equal 3, engine.state["rules_version"]
+    assert_equal 4, engine.state["rules_version"]
     assert_equal 1, engine.state["watch"]
     assert_empty engine.state["prepared"]
+    assert_equal 10, engine.state["cycle_limit"]
   end
 
   test "two command cards resolve abilities and the remainder becomes support" do
@@ -128,6 +139,7 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     state["played"] = %w[militia charter]
     state["support"] = %w[colonist survey_probe colonist militia]
     state["reach"] = %w[survey_skiff habitat_ring]
+    state["event_deck"] = [ "fleet_diversion" ]
     game.update!(state: state)
 
     game.engine.buy!(0)
@@ -135,6 +147,9 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 1, game.state["actions"]
 
     game.engine.buy!(1)
+    assert_equal "event", game.state["phase"]
+    event = CinderReach::Catalog.event(game.state["current_event"])
+    game.engine.resolve_event!(choice: event[:choices].keys.first)
     assert_equal "command", game.state["phase"]
     assert_equal 2, game.state["watch"]
     assert_equal %w[militia charter], game.state["prepared"]
@@ -167,6 +182,9 @@ class CinderReachEngineTest < ActiveSupport::TestCase
 
     game.engine.end_actions!
 
+    event = CinderReach::Catalog.event(game.state["current_event"])
+    game.engine.resolve_event!(choice: event[:choices].keys.first)
+
     assert_equal 0, game.state["buy_discount"]
     assert game.state["hunter_used"]
     assert game.state["world_action_used"]
@@ -180,6 +198,8 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     state = game.state
     state["phase"] = "action"
     state["system"] = [ "rust_mesa" ]
+    state["inner_deep"] = [ "glass_sea" ]
+    state["outer_deep"] = []
     state["deep"] = [ "glass_sea" ]
     state["data"] = 2
     state["supply"] = 5
@@ -304,11 +324,12 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal 5, game.state["fleet"]
   end
 
-  test "cycle ten awards the mandate with two colonies" do
+  test "the mandate deadline requires three colonies including an outer colony" do
     game = CinderReach::Engine.start!
     state = game.state
-    state["cycle"] = 10
-    state["colonies"] = 2
+    state["cycle"] = 8
+    state["colonized_worlds"] = %w[rust_mesa glass_sea red_choir]
+    state["colonies"] = 3
     state["phase"] = "cleanup"
     game.update!(state: state)
 
@@ -316,5 +337,53 @@ class CinderReachEngineTest < ActiveSupport::TestCase
 
     assert_equal "won", game.reload.status
     assert_equal "finished", game.state["phase"]
+  end
+
+  test "an outer world is technology gated and takes separate survey and colony actions" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "action"
+    state["system"] = [ "rust_mesa", "glass_sea", "red_choir" ]
+    state["data"] = 3
+    state["supply"] = 6
+    game.update!(state: state)
+
+    assert_raises(CinderReach::InvalidMove) { game.engine.survey!(2) }
+
+    state = game.state
+    state["unlocked_tech"] = [ "nav_probes" ]
+    game.update!(state: state)
+    game.engine.survey!(2)
+
+    assert_includes game.state["surveyed_worlds"], "red_choir"
+    assert_equal "action", game.state["phase"]
+    assert_equal 1, game.state["actions"]
+    assert_nil game.state["surveyed_world"]
+
+    game.engine.survey!(2)
+    assert_equal "survey_decision", game.state["phase"]
+    game.engine.colonize!
+    assert_includes game.state["colonized_worlds"], "red_choir"
+    assert_equal 1, game.engine.outer_colonies
+  end
+
+  test "midwatch events resolve before watch two" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["phase"] = "action"
+    state["watch"] = 1
+    state["current_event"] = nil
+    state["event_deck"] = [ "quiet_signal" ]
+    state["data"] = 1
+    game.update!(state: state)
+
+    game.engine.end_actions!
+    assert_equal "event", game.state["phase"]
+    assert_equal "quiet_signal", game.state["current_event"]
+
+    game.engine.resolve_event!(choice: "archive")
+    assert_equal 3, game.state["data"]
+    assert_equal 2, game.state["watch"]
+    assert_equal "command", game.state["phase"]
   end
 end

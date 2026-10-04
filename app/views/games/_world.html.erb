@@ -1,23 +1,31 @@
 <% data = world_data(world_key) %>
 <% survey_cost = effective_survey_cost(@state, world_key) %>
 <% charted = @state["surveyed_worlds"].include?(world_key) %>
+<% outer = data[:ring] == "outer" %>
+<% accessible = @engine.world_accessible?(world_key) %>
 <% action_cost = charted ? effective_colony_cost(@state, world_key) : survey_cost %>
 <% available_resource = charted ? @state["supply"] : @state["data"] %>
-<% action_disabled = available_resource < action_cost || @state["pending_effect"].present? %>
-<article class="world-card world-<%= world_key.dasherize %> <%= 'is-surveyed' if charted %> <%= 'is-selected' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if action_disabled %> <%= 'is-actionable' if @state['phase'] == 'action' && !action_disabled %>">
+<% action_disabled = !accessible || available_resource < action_cost || @state["pending_effect"].present? %>
+<article class="world-card world-<%= world_key.dasherize %> world-<%= data[:ring] %> <%= 'is-locked' unless accessible %> <%= 'is-surveyed' if charted %> <%= 'is-selected' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if action_disabled %> <%= 'is-actionable' if @state['phase'] == 'action' && !action_disabled %>">
   <div class="world-art" aria-hidden="true"><span class="world-sphere"></span></div>
   <div class="world-content">
-    <span class="micro-label"><%= charted ? "SURVEYED WORLD" : "UNCHARTED WORLD" %></span>
+    <span class="micro-label"><%= charted ? "CHARTED" : "UNCHARTED" %> <%= data[:ring].upcase %> WORLD</span>
+    <span class="world-ring-badge"><%= outer ? "OUTER REACH" : "INNER REACH" %></span>
     <h3><%= data[:name] %></h3>
     <p class="world-flavor"><%= data[:flavor] %></p>
     <dl>
       <div><dt>Survey <b><%= charted ? "✓" : survey_cost %></b></dt><dd><%= charted ? "Charted · reward claimed" : data[:survey_text] %></dd></div>
       <div><dt>Colonize <b><%= effective_colony_cost(@state, world_key) %></b></dt><dd><%= data[:colony_text] %></dd></div>
     </dl>
+    <% if outer && !accessible %>
+      <span class="world-access"><b>TECH ACCESS</b><%= @engine.world_access_names(world_key).join(" or ") %></span>
+    <% elsif outer && !charted %>
+      <span class="world-access is-open"><b>TWO-STAGE EXPEDITION</b>Chart now · colonize later</span>
+    <% end %>
     <% if @state["phase"] == "action" %>
       <% action_name = charted ? "COLONIZE" : "SURVEY" %>
       <% currency = charted ? "SUPPLY" : "DATA" %>
-      <span class="world-action-label"><%= action_disabled ? "#{action_name} COST #{action_cost}" : "#{action_name} · #{action_cost} #{currency}" %></span>
+      <span class="world-action-label"><%= !accessible ? "REQUIRES TECHNOLOGY" : action_disabled ? "#{action_name} COST #{action_cost}" : "#{action_name} · #{action_cost} #{currency}" %></span>
       <%= button_to "", survey_game_path(@game, slot: index), class: "world-hit-area", disabled: action_disabled, form: { class: "world-hit-form" }, aria: { label: "#{action_name.titleize} #{data[:name]} for #{action_cost} #{currency.titleize}" } %>
     <% end %>
   </div>

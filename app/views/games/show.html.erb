@@ -8,12 +8,12 @@
     <% end %>
     <nav class="header-menu" aria-label="Game information">
       <details class="header-drawer mandate-drawer">
-        <summary>Mandate <b><%= @state["colonies"] %>/4</b></summary>
+        <summary>Mandate <b><%= @engine.mandate_met? ? "READY" : "#{@state['colonies']}/3" %></b></summary>
         <section class="mandate-card">
           <h2>Make Ark-9 hold.</h2>
           <ul>
-            <li class="<%= 'done' if @state['colonies'] >= 2 %>"><i><%= @state['colonies'] >= 2 ? '✓' : '1' %></i><span><b>Establish 2 Colonies</b><small>Required by cycle 10</small></span></li>
-            <li class="<%= 'done' if @state['grid'] %>"><i><%= @state['grid'] ? '✓' : '2' %></i><span><b>Activate the Grid</b><small>Required to survive Fleet 5</small></span></li>
+            <li class="<%= 'done' if @state['colonies'] >= 3 %>"><i><%= @state['colonies'] >= 3 ? '✓' : '1' %></i><span><b>Establish 3 Colonies</b><small>Required by cycle <%= @engine.cycle_limit %></small></span></li>
+            <li class="<%= 'done' if @engine.outer_colonies >= 1 %>"><i><%= @engine.outer_colonies >= 1 ? '✓' : '2' %></i><span><b>Settle the Outer Reach</b><small>At least 1 Outer colony</small></span></li>
             <li class="<%= 'done' if @state['colonies'] >= 4 %>"><i><%= @state['colonies'] >= 4 ? '✓' : '3' %></i><span><b>Lock the Beacon</b><small>4 Colonies wins immediately</small></span></li>
           </ul>
         </section>
@@ -146,6 +146,24 @@
     </section>
   <% end %>
 
+  <% if @state["phase"] == "event" && @state["current_event"] %>
+    <% event = event_data(@state["current_event"]) %>
+    <section class="event-panel event-<%= event[:tone] %>">
+      <div class="event-sigil"><span><%= event[:tone] == 'opportunity' ? '✦' : event[:tone] == 'hazard' ? '!' : '◇' %></span></div>
+      <div class="event-copy">
+        <span class="micro-label">MIDWATCH EVENT / <%= event[:tone] %></span>
+        <h2><%= event[:name] %></h2>
+        <p><%= event[:text] %></p>
+        <small>Unforeseen events happen between Watches. Command tags cannot block them.</small>
+      </div>
+      <div class="event-actions">
+        <% event[:choices].each do |decision, label| %>
+          <%= button_to label, resolve_event_game_path(@game, decision: decision), class: event[:tone] == "hazard" ? "danger-button" : "primary-button" %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
   <% if @state["phase"] == "crisis" && @state["current_crisis"] %>
     <% crisis_key = @state["current_crisis"] %>
     <% crisis = crisis_data(crisis_key) %>
@@ -188,7 +206,7 @@
         <section class="tableau-panel worlds-panel">
           <div class="section-heading">
             <div><span class="micro-label">VISIBLE SYSTEM</span><h2>Worlds in reach</h2></div>
-            <span class="deck-count"><b><%= @state["deep"].length %></b> WORLDS IN THE DEEP</span>
+            <span class="deck-count"><b>2 INNER</b> · <b>1 OUTER</b> &nbsp; <%= @state["deep"].length %> UNCHARTED</span>
           </div>
           <div class="world-row">
             <% @state["system"].each_with_index do |world_key, index| %>
@@ -271,13 +289,13 @@
     <aside class="mission-sidebar">
       <%= render "incoming_crisis" %>
 
-      <section class="cycle-panel" aria-label="Cycle <%= @state['cycle'] %> of 10, Watch <%= watch_name %> of 2">
+      <section class="cycle-panel" aria-label="Cycle <%= @state['cycle'] %> of <%= @engine.cycle_limit %>, Watch <%= watch_name %> of 2">
         <header>
-          <div><span class="micro-label">MISSION CLOCK</span><h2>Cycle <%= @state["cycle"] %><small>/10</small></h2></div>
+          <div><span class="micro-label">MISSION CLOCK</span><h2>Cycle <%= @state["cycle"] %><small>/<%= @engine.cycle_limit %></small></h2></div>
           <strong>WATCH <%= watch_name %></strong>
         </header>
-        <div class="cycle-grid">
-          <% 1.upto(10) do |number| %>
+        <div class="cycle-grid cycle-grid-<%= @engine.cycle_limit %>">
+          <% 1.upto(@engine.cycle_limit) do |number| %>
             <span class="cycle-pip <%= 'past' if number < @state['cycle'] %> <%= 'current' if number == @state['cycle'] %>">
               <b><%= number %></b>
               <small>
@@ -291,7 +309,7 @@
       </section>
       <% if @state["phase"] == "cleanup" %>
         <%= button_to cleanup_game_path(@game), class: "primary-button mission-advance-button", form: { class: "mission-advance-form" } do %>
-          <span><small><%= @state["cycle"] == 10 ? "FINAL RESOLUTION" : "MISSION CONTINUES" %></small><b><%= @state["cycle"] == 10 ? "SCORE MANDATE" : "BEGIN CYCLE #{@state['cycle'] + 1}" %></b></span>
+          <span><small><%= @state["cycle"] == @engine.cycle_limit ? "FINAL RESOLUTION" : "MISSION CONTINUES" %></small><b><%= @state["cycle"] == @engine.cycle_limit ? "SCORE MANDATE" : "BEGIN CYCLE #{@state['cycle'] + 1}" %></b></span>
           <i>→</i>
         <% end %>
       <% end %>

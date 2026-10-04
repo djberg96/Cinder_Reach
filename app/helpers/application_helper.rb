@@ -5,6 +5,7 @@ module ApplicationHelper
   def card_data(key) = CinderReach::Catalog.card(key)
   def world_data(key) = CinderReach::Catalog.world(key)
   def crisis_data(key) = CinderReach::Catalog.crisis(key)
+  def event_data(key) = CinderReach::Catalog.event(key)
   def tech_data(key) = CinderReach::Catalog.tech_tree(key)
 
   def effective_buy_cost(_state, key)

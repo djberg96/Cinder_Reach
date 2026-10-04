@@ -37,7 +37,7 @@
       <% if @engine.crisis_tags.any? %>
         <span class="crisis-readiness"><small>READINESS</small><span><% @engine.crisis_tags.tally.each do |tag, count| %><b><%= tag_symbol(tag) %> <%= tag %> ×<%= count %></b><% end %></span></span>
       <% end %>
-      <% if @engine.tech?("def_analysis") && @state["glimpse"].present? %>
+      <% if (@engine.tech?("def_analysis") || @state["colonized_worlds"].include?("black_relay")) && @state["glimpse"].present? %>
         <% next_signal = crisis_data(@state["glimpse"].first) %>
         <% next_display = next_signal[:display] %>
         <div class="crisis-intel">

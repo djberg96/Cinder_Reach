@@ -29,12 +29,26 @@ module CinderReach
     }.freeze
 
     WORLDS = {
-      "rust_mesa" => { name: "Rust Mesa", survey: 2, colony: 5, survey_text: "+2 Supply", colony_text: "Outpost · Stability +1", flavor: "Iron dust veils a patient, buried biosphere." },
-      "glass_sea" => { name: "Glass Sea", survey: 1, colony: 4, survey_text: "Reinforce Support", colony_text: "Outpost", flavor: "A frozen ocean rings beneath the survey lights." },
-      "pale_garden" => { name: "Pale Garden", survey: 2, colony: 4, survey_text: "Stability +1", colony_text: "Outpost · Scrap an Unrest", flavor: "Something tends these colorless groves." },
-      "red_choir" => { name: "Red Choir", survey: 2, colony: 5, survey_text: "Fleet −1", colony_text: "Outpost", flavor: "Radio storms sing in a language the Fleet fears." },
-      "vault_orbit" => { name: "Vault Orbit", survey: 3, colony: 6, survey_text: "Next Lab costs 2 less", colony_text: "Outpost · Reinforce Support", flavor: "A dead civilization left one door unlocked." },
-      "black_relay" => { name: "Black Relay", survey: 3, colony: 6, survey_text: "Reorder the next 2 crises", colony_text: "Outpost · Grid on or Fleet −1", flavor: "Its signal arrives before it is transmitted." }
+      "rust_mesa" => { name: "Rust Mesa", ring: "inner", survey: 2, colony: 5, survey_text: "+2 Supply", colony_text: "Outpost · Stability +1", flavor: "Iron dust veils a patient, buried biosphere." },
+      "glass_sea" => { name: "Glass Sea", ring: "inner", survey: 1, colony: 4, survey_text: "Reinforce Support", colony_text: "Outpost", flavor: "A frozen ocean rings beneath the survey lights." },
+      "pale_garden" => { name: "Pale Garden", ring: "inner", survey: 2, colony: 4, survey_text: "Stability +1", colony_text: "Outpost · Scrap an Unrest", flavor: "Something tends these colorless groves." },
+      "red_choir" => { name: "Red Choir", ring: "outer", survey: 3, colony: 6, requires_any: %w[nav_probes def_analysis], survey_text: "Fleet −1", colony_text: "Outpost · Fleet −1 each cycle", flavor: "Radio storms sing in a language the Fleet fears." },
+      "vault_orbit" => { name: "Vault Orbit", ring: "outer", survey: 4, colony: 7, requires_any: %w[nav_probes ind_salvage], survey_text: "Next Lab costs 2 less", colony_text: "Outpost · +1 Data each cycle", flavor: "A dead civilization left one door unlocked." },
+      "black_relay" => { name: "Black Relay", ring: "outer", survey: 4, colony: 7, requires_any: %w[def_analysis civ_mesh], survey_text: "Reorder the next 2 crises", colony_text: "Outpost · Deep Intel · Grid on or Fleet −1", flavor: "Its signal arrives before it is transmitted." }
+    }.freeze
+
+    EVENTS = {
+      "salvage_drift" => { name: "Salvage Drift", tone: "opportunity", text: "A wreck field crosses Ark-9's path.", choices: { "salvage" => "Recover 2 Supply" } },
+      "quiet_signal" => { name: "Quiet Signal", tone: "opportunity", text: "A clean telemetry burst reaches the archive.", choices: { "archive" => "Bank 2 Data" } },
+      "fleet_diversion" => { name: "Fleet Diversion", tone: "opportunity", text: "The Silent Fleet turns toward a phantom beacon.", choices: { "observe" => "Fleet −1" } },
+      "steady_hands" => { name: "Steady Hands", tone: "opportunity", text: "The council closes ranks around the mission.", choices: { "rally" => "Stability +1" } },
+      "relief_convoy" => { name: "Relief Convoy", tone: "opportunity", text: "An unscheduled tender joins the formation.", choices: { "receive" => "Reinforce Support" } },
+      "emergency_levy" => { name: "Emergency Levy", tone: "dilemma", text: "The colonies can be pressed for emergency stores—at a cost.", choices: { "accept" => "+3 Supply · Gain Unrest", "decline" => "Decline the levy" } },
+      "frontier_grant" => { name: "Frontier Grant", tone: "dilemma", text: "A single appropriation can fund the fleet or the lattice.", choices: { "supply" => "Take 3 Supply", "data" => "Bank 2 Data" } },
+      "colonial_petition" => { name: "Colonial Petition", tone: "dilemma", text: "The petitioners ask Ark-9 to choose its priority.", choices: { "unity" => "Stability +1", "research" => "Bank 1 Data" } },
+      "labor_dispute" => { name: "Labor Dispute", tone: "hazard", text: "The loading crews stop work without warning.", choices: { "stores" => "Lose up to 2 Supply", "council" => "Stability −1" } },
+      "data_corruption" => { name: "Data Corruption", tone: "hazard", text: "A checksum cascade reaches the research archive.", choices: { "purge" => "Lose up to 1 Data", "conceal" => "Gain Unrest" } },
+      "market_shock" => { name: "Market Shock", tone: "hazard", text: "The Reach exchange collapses and reforms overnight.", choices: { "cycle" => "Replace every Reach card" } }
     }.freeze
 
     CRISES = {
@@ -128,6 +142,7 @@ module CinderReach
     def card(key) = CARDS.fetch(key)
     def world(key) = WORLDS.fetch(key)
     def crisis(key) = CRISES.fetch(key)
+    def event(key) = EVENTS.fetch(key)
     def tech_tree(key) = TECH_TREES.fetch(key)
 
     def tech_node(key)

@@ -21,6 +21,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :success
     assert_select ".command-strip"
+    assert_select ".header-menu .header-drawer", 3
+    assert_select ".mission-sidebar .cycle-panel", 1
     assert_select ".cycle-pip", 10
     assert_select ".watch-marker.active", 1
     assert_select ".world-card", 3
@@ -29,6 +31,10 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".board-tableau .tableau-panel", 2
     assert_select ".strategy-row .technology-console", 1
     assert_select ".strategy-row .played-zone", 1
+    assert_select ".command-slot", 2
+    assert_select ".command-slot.is-empty", 2
+    assert_select ".support-lane", 1
+    assert_select ".turn-guide", 0
     assert_select ".incoming-crisis", 1
     assert_select ".incoming-crisis .card-kind", "CRISIS CARD"
     assert_select ".incoming-crisis .crisis-card-art", 1
@@ -43,7 +49,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tech-node", 20
   end
 
-  test "playing a card moves it onto the table and updates guidance" do
+  test "playing a card moves it into the next command slot" do
     game = CinderReach::Engine.start!
     played_name = CinderReach::Catalog.card(game.state["hand"].first)[:name]
 
@@ -55,10 +61,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".played-card h3", played_name
     assert_select ".played-card .card-art", 1
     assert_select ".played-card .card-copy", 1
-    assert_select ".turn-guide h2", "Choose a command"
-    assert_select ".turn-guide .guide-step", /COMMAND 2\/2/
-    assert_select ".turn-guide .guide-tooltip", /every remaining card becomes Support/
+    assert_select ".command-slot .played-card", 1
+    assert_select ".command-slot.is-empty.is-next", 1
     assert_select ".hand-row .card-hit-form", 5
+
+    post play_card_game_path(game), params: { card_index: 0 }
+    follow_redirect!
+
+    assert_select ".command-slot .played-card", 2
+    assert_select ".support-lane .played-card", 4
+    assert_select ".table-phase-button", /End Watch I/
   end
 
   test "researching a technology updates the lattice" do

@@ -1,5 +1,5 @@
-<details class="rules-drawer">
-  <summary>Field manual</summary>
+<details class="<%= local_assigns[:header] ? 'header-drawer manual-drawer' : 'rules-drawer' %>">
+  <summary>Field manual<% if local_assigns[:header] %> <b>?</b><% end %></summary>
   <div class="rules-content">
     <div>
       <span class="step-number">01</span><h3>Watch I</h3>

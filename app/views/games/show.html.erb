@@ -6,20 +6,32 @@
     <%= link_to root_path, class: "brand-mark" do %>
       <span class="brand-star">✦</span><span><b>CINDER</b> REACH</span>
     <% end %>
-    <div class="cycle-track" aria-label="Cycle <%= @state['cycle'] %> of 10, Watch <%= watch_name %> of 2">
-      <span class="micro-label">CYCLE <%= @state["cycle"] %> · WATCH <%= watch_name %></span>
-      <div class="cycle-pips">
-        <% 1.upto(10) do |number| %>
-          <span class="cycle-pip <%= 'past' if number < @state['cycle'] %> <%= 'current' if number == @state['cycle'] %>">
-            <b><%= number %></b>
-            <small>
-              <i class="watch-marker <%= 'complete' if number < @state['cycle'] || (number == @state['cycle'] && @state['watch'] == 2) %> <%= 'active' if number == @state['cycle'] && @state['watch'] == 1 %>">I</i>
-              <i class="watch-marker <%= 'complete' if number < @state['cycle'] %> <%= 'active' if number == @state['cycle'] && @state['watch'] == 2 %>">II</i>
-            </small>
-          </span>
-        <% end %>
-      </div>
-    </div>
+    <nav class="header-menu" aria-label="Game information">
+      <details class="header-drawer mandate-drawer">
+        <summary>Mandate <b><%= @state["colonies"] %>/4</b></summary>
+        <section class="mandate-card">
+          <h2>Make Ark-9 hold.</h2>
+          <ul>
+            <li class="<%= 'done' if @state['colonies'] >= 2 %>"><i><%= @state['colonies'] >= 2 ? '✓' : '1' %></i><span><b>Establish 2 Colonies</b><small>Required by cycle 10</small></span></li>
+            <li class="<%= 'done' if @state['grid'] %>"><i><%= @state['grid'] ? '✓' : '2' %></i><span><b>Activate the Grid</b><small>Required to survive Fleet 5</small></span></li>
+            <li class="<%= 'done' if @state['colonies'] >= 4 %>"><i><%= @state['colonies'] >= 4 ? '✓' : '3' %></i><span><b>Lock the Beacon</b><small>4 Colonies wins immediately</small></span></li>
+          </ul>
+        </section>
+      </details>
+
+      <details class="header-drawer log-drawer">
+        <summary>Ship's log <b><%= @state["log"].length %></b></summary>
+        <section class="log-card">
+          <ol>
+            <% @state["log"].first(7).each_with_index do |entry, index| %>
+              <li class="<%= 'latest' if index.zero? %>"><i></i><span><%= entry %></span></li>
+            <% end %>
+          </ol>
+        </section>
+      </details>
+
+      <%= render "rules", header: true %>
+    </nav>
     <div class="header-tools">
       <span class="protocol"><i></i><%= @game.difficulty.upcase %></span>
       <%= link_to "Exit", root_path, class: "quiet-link" %>
@@ -196,18 +208,44 @@
       <div class="strategy-row">
         <%= render "technology" %>
 
-        <section class="played-zone <%= 'is-empty' if @state['played'].empty? && @state['support'].empty? %>">
+        <section class="played-zone">
           <div class="played-heading">
             <div><span class="micro-label">ON THE TABLE</span><h2>Command &amp; Support</h2></div>
-            <div class="table-resources"><span>SUPPLY <b><%= @state["supply"] %></b></span><span>DATA <b><%= @state["data"] %></b></span></div>
+            <div class="table-controls">
+              <% if @state["phase"] == "action" %>
+                <%= button_to(@state["watch"] == 1 ? "End Watch I →" : "Face crisis →", end_actions_game_path(@game), class: "#{@state['watch'] == 1 ? 'secondary-button' : 'danger-button'} table-phase-button") %>
+              <% elsif @state["phase"] == "cleanup" %>
+                <%= button_to(@state["cycle"] == 10 ? "Score mandate →" : "Begin cycle #{@state['cycle'] + 1} →", cleanup_game_path(@game), class: "primary-button table-phase-button") %>
+              <% end %>
+              <div class="table-resources"><span>SUPPLY <b><%= @state["supply"] %></b></span><span>DATA <b><%= @state["data"] %></b></span></div>
+            </div>
           </div>
-          <div class="played-row">
-            <% if @state["played"].any? || @state["support"].any? %>
-              <% @state["played"].each do |key| %><%= render "played_card", card_key: key, role: "command" %><% end %>
-              <% @state["support"].each do |key| %><%= render "played_card", card_key: key, role: "support" %><% end %>
-            <% else %>
-              <div class="played-placeholder"><span>↓</span> Two Commands and the remaining Support will deploy here.</div>
-            <% end %>
+          <div class="table-deployment">
+            <section class="command-lane">
+              <div class="lane-heading"><b>COMMAND</b><span>CRISIS READINESS</span></div>
+              <div class="command-slots">
+                <% 2.times do |index| %>
+                  <% if (key = @state["played"][index]) %>
+                    <div class="command-slot"><%= render "played_card", card_key: key, role: "command" %></div>
+                  <% else %>
+                    <div class="command-slot is-empty <%= 'is-next' if @state['phase'] == 'command' && index == @state['played'].length %>">
+                      <span><b><%= index + 1 %></b><small>COMMAND SLOT</small></span>
+                      <em><%= @state["phase"] == "command" && index == @state["played"].length ? "SELECT FROM HAND" : "AWAITING COMMAND" %></em>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </section>
+            <section class="support-lane">
+              <div class="lane-heading"><b>SUPPORT</b><span>GENERATES RESOURCES</span></div>
+              <div class="support-cards">
+                <% if @state["support"].any? %>
+                  <% @state["support"].each do |key| %><%= render "played_card", card_key: key, role: "support" %><% end %>
+                <% else %>
+                  <div class="support-placeholder"><span>↓</span><b>Support deploys after both Commands are assigned.</b><small>Remaining cards generate Supply and Data.</small></div>
+                <% end %>
+              </div>
+            </section>
           </div>
           <% if @state["phase"] == "action" %>
             <details class="purge-control table-purge">
@@ -227,32 +265,25 @@
 
     <aside class="mission-sidebar">
       <%= render "incoming_crisis" %>
-      <%= render "turn_guide" %>
 
-      <details class="sidebar-drawer mandate-drawer">
-        <summary>Governor's mandate <b><%= @state["colonies"] %>/4</b></summary>
-        <section class="mandate-card">
-          <h2>Make Ark-9 hold.</h2>
-          <ul>
-            <li class="<%= 'done' if @state['colonies'] >= 2 %>"><i><%= @state['colonies'] >= 2 ? '✓' : '1' %></i><span><b>Establish 2 Colonies</b><small>Required by cycle 10</small></span></li>
-            <li class="<%= 'done' if @state['grid'] %>"><i><%= @state['grid'] ? '✓' : '2' %></i><span><b>Activate the Grid</b><small>Required to survive Fleet 5</small></span></li>
-            <li class="<%= 'done' if @state['colonies'] >= 4 %>"><i><%= @state['colonies'] >= 4 ? '✓' : '3' %></i><span><b>Lock the Beacon</b><small>4 Colonies wins immediately</small></span></li>
-          </ul>
-        </section>
-      </details>
-
-      <details class="sidebar-drawer log-drawer">
-        <summary>Ship's log <b><%= @state["log"].length %></b></summary>
-        <section class="log-card">
-          <ol>
-            <% @state["log"].first(7).each_with_index do |entry, index| %>
-              <li class="<%= 'latest' if index.zero? %>"><i></i><span><%= entry %></span></li>
-            <% end %>
-          </ol>
-        </section>
-      </details>
-
-      <%= render "rules" %>
+      <section class="cycle-panel" aria-label="Cycle <%= @state['cycle'] %> of 10, Watch <%= watch_name %> of 2">
+        <header>
+          <div><span class="micro-label">MISSION CLOCK</span><h2>Cycle <%= @state["cycle"] %><small>/10</small></h2></div>
+          <strong>WATCH <%= watch_name %></strong>
+        </header>
+        <div class="cycle-grid">
+          <% 1.upto(10) do |number| %>
+            <span class="cycle-pip <%= 'past' if number < @state['cycle'] %> <%= 'current' if number == @state['cycle'] %>">
+              <b><%= number %></b>
+              <small>
+                <i class="watch-marker <%= 'complete' if number < @state['cycle'] || (number == @state['cycle'] && @state['watch'] == 2) %> <%= 'active' if number == @state['cycle'] && @state['watch'] == 1 %>">I</i>
+                <i class="watch-marker <%= 'complete' if number < @state['cycle'] %> <%= 'active' if number == @state['cycle'] && @state['watch'] == 2 %>">II</i>
+              </small>
+            </span>
+          <% end %>
+        </div>
+        <footer><span>CRISIS RESOLVES</span><b><%= @state["watch"] == 1 ? "AFTER WATCH II" : "AFTER THIS WATCH" %></b></footer>
+      </section>
     </aside>
   </div>
 

@@ -206,9 +206,17 @@
         <section class="tableau-panel worlds-panel">
           <div class="section-heading">
             <div><span class="micro-label">VISIBLE SYSTEM</span><h2>Worlds in reach</h2></div>
-            <span class="deck-count"><b>2 INNER</b> · <b>1 OUTER</b> &nbsp; <%= @state["deep"].length %> UNCHARTED</span>
+            <span class="deck-count"><b><%= @state["deep"].length %></b> WORLDS UNCHARTED</span>
           </div>
           <div class="world-row">
+            <div class="world-lane-label inner-lane">
+              <span><i>●</i><b>Inner Reach</b></span>
+              <small>2 WORLD SLOTS</small>
+            </div>
+            <div class="world-lane-label outer-lane">
+              <span><i>◆</i><b>Outer Reach</b></span>
+              <small>TECH-GATED</small>
+            </div>
             <% @state["system"].each_with_index do |world_key, index| %>
               <% if world_key %><%= render "world", world_key: world_key, index: index %><% end %>
             <% end %>

@@ -28,6 +28,9 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".colony-pips[data-count='0']", 1
     assert_select ".colony-pips .is-goal", text: /LOCK/, count: 1
     assert_select ".world-card", 3
+    assert_select ".world-lane-label.inner-lane", /Inner Reach/
+    assert_select ".world-lane-label.outer-lane", /Outer Reach/
+    assert_select ".world-ring-badge", 0
     assert_select ".reach-row .game-card", 4
     assert_select ".hand-row .game-card", 6
     assert_select ".hand-zone[data-controller='hand-deal']", 1

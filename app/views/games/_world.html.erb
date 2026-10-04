@@ -6,11 +6,10 @@
 <% action_cost = charted ? effective_colony_cost(@state, world_key) : survey_cost %>
 <% available_resource = charted ? @state["supply"] : @state["data"] %>
 <% action_disabled = !accessible || available_resource < action_cost || @state["pending_effect"].present? %>
-<article class="world-card world-<%= world_key.dasherize %> world-<%= data[:ring] %> <%= 'is-locked' unless accessible %> <%= 'is-surveyed' if charted %> <%= 'is-selected' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if action_disabled %> <%= 'is-actionable' if @state['phase'] == 'action' && !action_disabled %>">
+<article class="world-card world-slot-<%= index %> world-<%= world_key.dasherize %> world-<%= data[:ring] %> <%= 'is-locked' unless accessible %> <%= 'is-surveyed' if charted %> <%= 'is-selected' if @state['surveyed_world'] == world_key %> <%= 'is-disabled' if action_disabled %> <%= 'is-actionable' if @state['phase'] == 'action' && !action_disabled %>">
   <div class="world-art" aria-hidden="true"><span class="world-sphere"></span></div>
   <div class="world-content">
-    <span class="micro-label"><%= charted ? "CHARTED" : "UNCHARTED" %> <%= data[:ring].upcase %> WORLD</span>
-    <span class="world-ring-badge"><%= outer ? "OUTER REACH" : "INNER REACH" %></span>
+    <span class="micro-label"><%= charted ? "CHARTED" : "UNCHARTED" %> <span class="mobile-world-ring"><%= data[:ring].upcase %> </span>WORLD</span>
     <h3><%= data[:name] %></h3>
     <p class="world-flavor"><%= data[:flavor] %></p>
     <dl>

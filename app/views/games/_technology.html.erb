@@ -22,7 +22,23 @@
           <div><span class="micro-label">ARK-9 RESEARCH LATTICE</span><h2>Choose a doctrine</h2><p>Branches marked as alternatives lock when you commit to one path.</p></div>
           <span class="tech-data-bank"><b><%= @state["data"] %></b> DATA</span>
         </div>
-        <div class="tech-tree-grid">
+
+        <% CinderReach::Catalog::TECH_TREES.each_with_index do |(tree_key, _tree), index| %>
+          <input class="tech-tab-radio" type="radio" name="tech-doctrine" id="tech-tab-<%= tree_key %>" <%= "checked" if index.zero? %>>
+        <% end %>
+
+        <nav class="tech-tabs" aria-label="Research doctrines">
+          <% CinderReach::Catalog::TECH_TREES.each do |tree_key, tree| %>
+            <% unlocked = tree[:nodes].count { |node| @engine.tech?(node[:key]) } %>
+            <label class="tech-tab" for="tech-tab-<%= tree_key %>">
+              <i><%= tree[:symbol] %></i>
+              <span><b><%= tree[:name] %></b><small><%= tree[:tags].join(" OR ") %> COMMANDS</small></span>
+              <em><%= unlocked %>/5 <small>ONLINE</small></em>
+            </label>
+          <% end %>
+        </nav>
+
+        <div class="tech-tab-panels">
           <% CinderReach::Catalog::TECH_TREES.each do |tree_key, tree| %>
             <section class="tech-branch tech-<%= tree_key %>">
               <header><i><%= tree[:symbol] %></i><div><h3><%= tree[:name] %></h3><span><%= tree[:tags].join(" OR ") %> COMMANDS</span></div></header>

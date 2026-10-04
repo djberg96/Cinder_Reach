@@ -134,6 +134,22 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".incoming-crisis", 0
   end
 
+  test "a completed run can be permanently deleted" do
+    game = CinderReach::Engine.start!
+    game.update!(status: "won")
+    get game_path(game)
+    assert_select ".outcome-actions form[data-turbo-confirm*='cannot be undone'] .danger-text-button", "Delete run"
+
+    assert_difference("Game.count", -1) do
+      delete game_path(game)
+    end
+
+    assert_redirected_to root_path
+    follow_redirect!
+    assert_select ".flash", /permanently deleted/i
+    assert_select ".continue-panel", 0
+  end
+
   test "signal analysis previews the following crisis" do
     game = CinderReach::Engine.start!
     state = game.state

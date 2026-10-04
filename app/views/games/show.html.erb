@@ -99,7 +99,7 @@
       <div class="final-score"><span>FINAL SCORE</span><strong><%= @engine.score %></strong></div>
       <div class="outcome-actions">
         <%= link_to "New expedition", root_path, class: "primary-button" %>
-        <%= button_to "Archive this run", game_path(@game), method: :delete, class: "text-button", form: { data: { turbo_confirm: "Archive this run?" } } %>
+        <%= button_to "Delete run", game_path(@game), method: :delete, class: "text-button danger-text-button", form: { data: { turbo_confirm: "Permanently delete this run? This cannot be undone." } } %>
       </div>
     </section>
   <% end %>

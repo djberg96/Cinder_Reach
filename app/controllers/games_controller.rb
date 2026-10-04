@@ -37,7 +37,7 @@ class GamesController < ApplicationController
   def destroy
     @game.destroy!
     session.delete(:game_id)
-    redirect_to root_path, notice: "Run archived. The Reach is waiting."
+    redirect_to root_path, notice: "Run permanently deleted. The Reach is waiting."
   end
 
   private

@@ -12,6 +12,8 @@ button,input { font:inherit; } button,a { -webkit-tap-highlight-color:transparen
 .secondary-button { color:var(--ink); border-color:var(--line-bright); background:rgba(255,255,255,.025); } .secondary-button:hover { border-color:var(--cyan); background:rgba(112,211,204,.06); }
 .danger-button { color:#fff; border-color:#8b3930; background:#692920; } .danger-button:hover { background:#843329; }
 .text-button { min-height:auto; color:var(--muted); border-color:var(--line); background:none; }
+.danger-text-button { color:#984535; border-color:#b66b5c; }
+.danger-text-button:hover { color:#fff; border-color:#a84634; background:#b64f3b; }
 button:disabled { cursor:not-allowed; filter:grayscale(.5); opacity:.42; transform:none!important; }
 
 /* Landing */

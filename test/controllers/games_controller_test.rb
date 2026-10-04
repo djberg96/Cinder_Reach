@@ -71,6 +71,22 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tech-node-requirement", text: /No prerequisite/, count: 0
   end
 
+  test "a defended incoming crisis is visibly marked as averted" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["incoming_crisis"] = "probe_swarm"
+    state["played"] = [ "militia" ]
+    state["fleet"] = 2
+    game.update!(state: state)
+
+    get game_path(game)
+
+    assert_response :success
+    assert_select ".incoming-crisis.is-defended.is-averted", 1
+    assert_select ".crisis-art-core", "✓"
+    assert_select ".crisis-blocked-banner b", "CRISIS AVERTED"
+  end
+
   test "playing a card moves it into the next command slot" do
     game = CinderReach::Engine.start!
     played_name = CinderReach::Catalog.card(game.state["hand"].first)[:name]

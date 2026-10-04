@@ -82,6 +82,26 @@ class CinderReachEngineTest < ActiveSupport::TestCase
     assert_equal "action", engine.state["phase"]
   end
 
+  test "crisis defense reports whether the whole threat is averted" do
+    game = CinderReach::Engine.start!
+    state = game.state
+    state["incoming_crisis"] = "probe_swarm"
+    state["played"] = [ "militia" ]
+    state["fleet"] = 2
+    game.update!(state: state)
+
+    assert game.engine.crisis_defended?
+    assert game.engine.crisis_averted?
+
+    state = game.reload.state
+    state["fleet"] = 3
+    game.update!(state: state)
+
+    engine = CinderReach::Engine.new(game.reload)
+    assert engine.crisis_defended?
+    assert_not engine.crisis_averted?
+  end
+
   test "only two cards can be assigned as commands" do
     game = CinderReach::Engine.start!
     state = game.state

@@ -1,24 +1,32 @@
-  <% signal_key = @state["incoming_crisis"] %>
+<% signal_key = @state["incoming_crisis"] %>
 <% if signal_key && %w[command action].include?(@state["phase"]) %>
   <% signal = crisis_data(signal_key) %>
   <% display = signal[:display] %>
-  <section class="incoming-crisis threat-<%= signal[:threat].downcase %>">
+  <% defended = @engine.crisis_defended?(signal_key) %>
+  <% averted = @engine.crisis_averted?(signal_key) %>
+  <section class="incoming-crisis threat-<%= signal[:threat].downcase %> <%= 'is-defended' if defended %> <%= 'is-averted' if averted %>">
     <header class="crisis-card-header">
       <span class="card-kind">CRISIS CARD</span>
-      <b><%= signal[:threat] %></b>
+      <b><%= signal[:threat] %><%= " · #{averted ? 'AVERTED' : 'BLOCKED'}" if defended %></b>
     </header>
     <div class="crisis-card-art" aria-hidden="true">
       <span class="crisis-art-orbit"></span>
-      <span class="crisis-art-core">!</span>
+      <span class="crisis-art-core"><%= defended ? "✓" : "!" %></span>
     </div>
     <div class="crisis-card-copy">
-      <span class="incoming-status"><i class="incoming-pulse"></i><%= @state["watch"] == 1 ? "RESOLVES AFTER WATCH II" : "RESOLVES AFTER THIS WATCH" %></span>
+      <span class="incoming-status"><i class="incoming-pulse"></i><%= defended ? "DEFENSE CONFIRMED" : (@state["watch"] == 1 ? "RESOLVES AFTER WATCH II" : "RESOLVES AFTER THIS WATCH") %></span>
       <div class="crisis-title-row">
         <h2><%= signal[:name] %></h2>
         <span class="crisis-help" tabindex="0" aria-label="What is a crisis card?">?</span>
         <span class="crisis-tooltip" role="tooltip"><b>CRISIS CARD</b>This threat remains visible for both Watches. Command tags from either Watch enter Readiness and can satisfy its block condition.</span>
       </div>
-      <div class="crisis-effect <%= 'has-defense' if display[:defense] %>">
+      <% if defended %>
+        <div class="crisis-blocked-banner <%= 'is-partial' unless averted %>">
+          <i aria-hidden="true">✓</i>
+          <span><small><%= averted ? "#{display.dig(:defense, :label)} READY" : "THRESHOLD HAZARD REMAINS" %></small><b><%= averted ? "CRISIS AVERTED" : "PRIMARY THREAT BLOCKED" %></b></span>
+        </div>
+      <% end %>
+      <div class="crisis-effect <%= 'has-defense' if display[:defense] %> <%= 'is-neutralized' if defended %>">
         <% if display[:defense] %>
           <span class="crisis-defense">
             <i><%= display.dig(:defense, :symbol) %></i>

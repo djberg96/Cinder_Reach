@@ -91,6 +91,25 @@ module CinderReach
       tags_for(state["prepared"] + state["played"])
     end
 
+    def crisis_defended?(key = state["incoming_crisis"])
+      case key.to_s
+      when "ration_riot"
+        crisis_tags.count("COLONY") >= 2
+      when "admiralty_demand", "probe_swarm"
+        crisis_tags.include?("FLEET")
+      when "consortium_embargo", "council_fracture"
+        crisis_tags.include?("DECREE")
+      when "beacon_flicker"
+        state["colonies"] >= 2
+      else
+        false
+      end
+    end
+
+    def crisis_averted?(key = state["incoming_crisis"])
+      crisis_defended?(key) && (key.to_s != "probe_swarm" || state["fleet"] < 3)
+    end
+
     def tags_for(cards)
       result = cards.filter_map { |key| card(key)[:tag] }
       result += %w[COLONY FLEET] if tech?("civ_unity") && result.include?("DECREE")
@@ -415,18 +434,18 @@ module CinderReach
 
       case key
       when "ration_riot"
-        unless crisis_tags.count("COLONY") >= 2
+        unless crisis_defended?(key)
           adjust_stability!(-1)
           gain_unrest! if playing?
         end
       when "admiralty_demand"
-        adjust_fleet!(1, crisis: true) unless crisis_tags.include?("FLEET")
+        adjust_fleet!(1, crisis: true) unless crisis_defended?(key)
       when "consortium_embargo"
-        adjust_stability!(-1) unless crisis_tags.include?("DECREE")
+        adjust_stability!(-1) unless crisis_defended?(key)
       when "silent_ping"
         adjust_fleet!(1, crisis: true)
       when "council_fracture"
-        unless crisis_tags.include?("DECREE")
+        unless crisis_defended?(key)
           adjust_stability!(-1)
           gain_unrest! if playing?
         end
@@ -439,7 +458,7 @@ module CinderReach
           raise InvalidMove, "Choose a card to scrap or lose Stability"
         end
       when "probe_swarm"
-        adjust_fleet!(1, crisis: true) unless crisis_tags.include?("FLEET")
+        adjust_fleet!(1, crisis: true) unless crisis_defended?(key)
         adjust_stability!(-1) if state["fleet"] >= 3 && playing?
       when "refugee_wave"
         gain_unrest!
@@ -454,7 +473,7 @@ module CinderReach
           raise InvalidMove, "Choose a card to scrap or advance the Fleet"
         end
       when "beacon_flicker"
-        if state["colonies"] < 2
+        unless crisis_defended?(key)
           adjust_stability!(-1)
           adjust_fleet!(1, crisis: true) if playing?
         end

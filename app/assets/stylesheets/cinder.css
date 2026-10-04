@@ -392,14 +392,15 @@ body { background:#aeb6ae; }
 .crisis-defense>i { width:25px; height:25px; display:grid; flex:0 0 auto; place-items:center; border:1px solid #a66559; border-radius:50%; color:#fff; background:#a84b40; font-size:12px; font-style:normal; }
 .crisis-defense span { min-width:0; }
 .crisis-defense small,.crisis-defense b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.crisis-defense small { color:#8c625a; font-family:var(--mono); font-size:5px; letter-spacing:.07em; }
-.crisis-defense b { color:#69372f; font-family:var(--mono); font-size:7px; }
-.effect-or { color:#9b6d64; font-family:var(--mono); font-size:6px; font-weight:700; }
+.crisis-defense small { color:#8c625a; font-family:var(--mono); font-size:7px; letter-spacing:.07em; }
+.crisis-defense b { color:#69372f; font-family:var(--mono); font-size:10px; }
+.effect-or { color:#9b6d64; font-family:var(--mono); font-size:8px; font-weight:700; }
 .effect-results { display:flex; min-width:0; flex:1 1 52%; align-items:center; justify-content:center; gap:4px; }
-.effect-results>b { border:1px solid #b97c70; border-radius:2px; padding:4px 5px; color:#7d332a; background:#ead2ca; font-family:var(--mono); font-size:7px; line-height:1.1; text-align:center; white-space:nowrap; }
-.effect-results>em { color:#93645b; font-family:var(--mono); font-size:5px; font-style:normal; font-weight:700; }
+.effect-results>b { border:1px solid #b97c70; border-radius:2px; padding:5px 6px; color:#7d332a; background:#ead2ca; font-family:var(--mono); font-size:10px; line-height:1.1; text-align:center; white-space:nowrap; }
+.effect-results>em { color:#93645b; font-family:var(--mono); font-size:7px; font-style:normal; font-weight:700; }
+.crisis-effect.has-defense .effect-results.multi-effect { flex-direction:column; gap:2px; }
 .crisis-effect:not(.has-defense) .effect-results { justify-content:flex-start; }
-.effect-note,.crisis-intel { display:block; margin-top:6px; color:#80483f; font-family:var(--mono); font-size:6px; font-weight:700; letter-spacing:.04em; text-align:right; }
+.effect-note,.crisis-intel { display:block; margin-top:7px; color:#80483f; font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.03em; text-align:right; }
 .effect-note:before { content:"↳ "; color:var(--danger); }
 .crisis-intel { border-top:1px solid #d0aaa1; padding-top:6px; color:#625c98; text-align:left; }
 

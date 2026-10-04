@@ -26,7 +26,7 @@
           </span>
           <span class="effect-or">OR</span>
         <% end %>
-        <span class="effect-results">
+        <span class="effect-results <%= 'multi-effect' if display[:effects].length > 1 %>">
           <% display[:effects].each_with_index do |effect, index| %>
             <% if index.positive? %><em><%= display[:join] || "AND" %></em><% end %>
             <b><%= effect %></b>

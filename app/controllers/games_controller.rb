@@ -27,9 +27,10 @@ class GamesController < ApplicationController
   def arrange_crises = perform { @game.engine.arrange_crises!(params[:top_index]) }
   def colonize = perform { @game.engine.colonize!(relay_choice: params[:relay_choice]) }
   def pass_colony = perform { @game.engine.pass_colony! }
-  def purge = perform { @game.engine.purge!(params[:card_index]) }
-  def research = perform { @game.engine.research!(params[:track]) }
-  def resolve_crisis = perform { @game.engine.resolve_crisis!(choice: params[:decision], card_index: params[:card_index]) }
+  def purge = perform { @game.engine.purge!(params[:pile], params[:card_index]) }
+  def research = perform { @game.engine.research!(params[:tech]) }
+  def end_actions = perform { @game.engine.end_actions! }
+  def resolve_crisis = perform { @game.engine.resolve_crisis!(choice: params[:decision], card_index: params[:card_index], pile: params[:pile]) }
   def cleanup = perform { @game.engine.cleanup! }
 
   def destroy

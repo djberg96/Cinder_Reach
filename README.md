@@ -17,14 +17,14 @@ Then open <http://localhost:3000>. Runs are saved in SQLite and can be continued
 
 Each cycle has four phases:
 
-1. Inspect the incoming crisis, then spend one of your three starting Orders per selected card.
-2. Take one main action: buy, survey (and optionally colonize), research, or purge. A surveyed world remains charted, so future visits skip its survey cost and reward.
-3. Resolve the crisis you prepared for. The tags on played cards provide cover.
-4. Clean up, lose unspent Supply, and draw five cards.
+1. Draw six cards from the twelve-card starter deck and assign two as Commands. Their abilities and crisis tags activate; the remaining four become Support and generate resources.
+2. Take two actions in any combination: buy, survey (and optionally colonize), research, or purge. Supply pays for cards and colonies. Data pays for surveys and research, and banks between cycles. A surveyed world remains charted, so later visits skip its survey cost and reward.
+3. Resolve the visible crisis. Only the two Command cards' tags provide cover.
+4. Clean up, normally lose unspent Supply, and draw six cards. Banked Data remains.
 
 Win immediately by reaching four Colonies before the Fleet lands, or finish cycle ten with at least two Colonies. Stability 0 is a loss. Fleet 5 is a loss unless two Colonies and the Defense Grid are online.
 
-Research permanently advances one of three technology tracks. Expedition makes worlds cheaper and more productive, Industry strengthens the economy, and Command adds Orders and defensive systems. Each advance requires both Supply and matching tags in play, so deck composition determines which strategic paths are open.
+Research unlocks a branching lattice of twenty technologies across Navigation, Industry, Civics, and Defense. Each doctrine offers mutually exclusive specializations and a capstone. Upgrades cost Data and require matching Command tags, so both deck composition and the cards committed to Command determine which strategic paths are open.
 
 ## Verification
 

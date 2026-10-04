@@ -26,12 +26,16 @@
   <% end %>
 
   <section class="command-strip">
-    <div class="stat orders-stat">
-      <div><span>ORDERS</span><strong><%= @state["orders"] %><small>/<%= @engine.max_orders %></small></strong></div>
-      <div class="order-pips">
-        <% 1.upto(@engine.max_orders) do |n| %><i class="<%= 'filled' if n <= @state['orders'] %>">◆</i><% end %>
+    <div class="stat actions-stat">
+      <div><span>ACTIONS</span><strong><%= @state["actions"] %><small>/2</small></strong></div>
+      <div class="action-pips">
+        <% 1.upto(2) do |n| %><i class="<%= 'filled' if n <= @state['actions'] %>">◆</i><% end %>
       </div>
-      <small>ONE PER CARD</small>
+      <small>AFTER COMMAND</small>
+    </div>
+    <div class="stat resources-stat">
+      <div><span>SUPPLY</span><strong><%= @state["supply"] %></strong><small>THIS CYCLE</small></div>
+      <div><span>DATA</span><strong><%= @state["data"] %></strong><small>BANKED</small></div>
     </div>
     <div class="stat stability-stat">
       <div class="stat-heading"><span>STABILITY</span><strong><%= @state["stability"] %><small>/8</small></strong></div>
@@ -130,9 +134,9 @@
         <% end %>
         <div class="crisis-actions">
           <% if %w[harvest_blight deep_signal].include?(crisis_key) %>
-            <% if @state["hand"].any? %>
-              <% @state["hand"].each_with_index do |key, index| %>
-                <%= button_to "Scrap #{card_data(key)[:name]}", resolve_crisis_game_path(@game, decision: "scrap", card_index: index), class: "secondary-button small-button" %>
+            <% if @engine.scrappable_cards.any? %>
+              <% @engine.scrappable_cards.each do |pile, index, key| %>
+                <%= button_to "Scrap #{card_data(key)[:name]}", resolve_crisis_game_path(@game, decision: "scrap", pile: pile, card_index: index), class: "secondary-button small-button" %>
               <% end %>
             <% end %>
             <%= button_to(crisis_key == "harvest_blight" ? "Lose 1 Stability" : "Advance Fleet", resolve_crisis_game_path(@game, decision: crisis_key == "harvest_blight" ? "stability" : "fleet"), class: "danger-button") %>
@@ -153,7 +157,7 @@
   <% end %>
 
   <div class="board-grid">
-    <section class="board-main <%= 'awaiting-first-card' if @state['phase'] == 'play' && @state['played'].empty? %>">
+    <section class="board-main <%= 'awaiting-first-card' if @state['phase'] == 'command' && @state['played'].empty? %>">
       <div class="board-tableau">
         <section class="tableau-panel worlds-panel">
           <div class="section-heading">
@@ -176,7 +180,7 @@
             <% @state["reach"].each_with_index do |key, index| %>
               <% next unless key %>
               <% cost = effective_buy_cost(@state, key) %>
-              <%= render "card", card_key: key, cost: cost, index: index, buyable: @state["phase"] == "play", disabled: @state["supply"] < cost || @state["pending_effect"].present? %>
+              <%= render "card", card_key: key, cost: cost, index: index, buyable: @state["phase"] == "action", disabled: @state["supply"] < cost || @state["pending_effect"].present? %>
             <% end %>
           </div>
         </section>
@@ -185,18 +189,31 @@
       <div class="strategy-row">
         <%= render "technology" %>
 
-        <section class="played-zone <%= 'is-empty' if @state['played'].empty? %>">
+        <section class="played-zone <%= 'is-empty' if @state['played'].empty? && @state['support'].empty? %>">
           <div class="played-heading">
-            <div><span class="micro-label">ON THE TABLE</span><h2>Played this cycle</h2></div>
-            <div class="table-supply"><span>SUPPLY</span><strong><%= @state["supply"] %></strong></div>
+            <div><span class="micro-label">ON THE TABLE</span><h2>Command &amp; Support</h2></div>
+            <div class="table-resources"><span>SUPPLY <b><%= @state["supply"] %></b></span><span>DATA <b><%= @state["data"] %></b></span></div>
           </div>
           <div class="played-row">
-            <% if @state["played"].any? %>
-              <% @state["played"].each do |key| %><%= render "played_card", card_key: key %><% end %>
+            <% if @state["played"].any? || @state["support"].any? %>
+              <% @state["played"].each do |key| %><%= render "played_card", card_key: key, role: "command" %><% end %>
+              <% @state["support"].each do |key| %><%= render "played_card", card_key: key, role: "support" %><% end %>
             <% else %>
-              <div class="played-placeholder"><span>↓</span> Played cards stay here through the crisis.</div>
+              <div class="played-placeholder"><span>↓</span> Two Commands and the remaining Support will deploy here.</div>
             <% end %>
           </div>
+          <% if @state["phase"] == "action" %>
+            <details class="purge-control table-purge">
+              <summary>Purge a card · costs 1 action</summary>
+              <div>
+                <% { "played" => @state["played"], "support" => @state["support"] }.each do |pile, cards| %>
+                  <% cards.each_with_index do |key, index| %>
+                    <%= button_to "Purge #{card_data(key)[:name]}", purge_game_path(@game, pile: pile, card_index: index), class: "text-button", disabled: key == "unrest" %>
+                  <% end %>
+                <% end %>
+              </div>
+            </details>
+          <% end %>
         </section>
       </div>
     </section>
@@ -232,7 +249,8 @@
     </aside>
   </div>
 
-  <section class="hand-zone <%= 'is-current-focus' if @state['phase'] == 'play' && @state['played'].empty? && !@state['pending_effect'] %>">
+  <% if @state["phase"] == "command" %>
+  <section class="hand-zone is-current-focus">
     <div class="section-heading hand-heading">
       <div><span class="micro-label">GOVERNOR'S HAND</span><h2>Your cards <small><%= @state["hand"].length %></small></h2></div>
       <div class="pile-readout"><span>DECK <b><%= @state["deck"].length %></b></span><span>DISCARD <b><%= @state["discard"].length %></b></span></div>
@@ -240,21 +258,12 @@
     <% if @state["hand"].any? %>
       <div class="card-row hand-row">
         <% @state["hand"].each_with_index do |key, index| %>
-          <%= render "card", card_key: key, index: index, playable: @state["phase"] == "play", disabled: @state["pending_effect"].present? || @state["orders"] <= 0 %>
+          <%= render "card", card_key: key, index: index, playable: true, disabled: @state["pending_effect"].present? %>
         <% end %>
       </div>
-      <% if @state["phase"] == "play" && !@state["pending_effect"] %>
-        <details class="purge-control">
-          <summary>Purge a card instead of buying or surveying</summary>
-          <div>
-            <% @state["hand"].each_with_index do |key, index| %>
-              <%= button_to "Purge #{card_data(key)[:name]}", purge_game_path(@game, card_index: index), class: "text-button", disabled: key == "unrest" %>
-            <% end %>
-          </div>
-        </details>
-      <% end %>
     <% else %>
       <div class="empty-hand">No cards remain in hand.</div>
     <% end %>
   </section>
+  <% end %>
 </main>

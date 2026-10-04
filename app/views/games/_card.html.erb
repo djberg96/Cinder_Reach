@@ -15,11 +15,14 @@
   </div>
   <div class="card-copy">
     <% if data[:tag] %><span class="tag tag-<%= data[:tag].downcase %>"><%= tag_symbol(data[:tag]) %> <%= data[:tag] %></span><% end %>
-    <p><%= data[:text] %></p>
+    <div class="card-modes">
+      <p><b>COMMAND</b> <%= data[:command_text] %></p>
+      <span><b>SUPPORT</b> <%= data[:supply] %> Supply · <%= data[:data] %> Data</span>
+    </div>
   </div>
   <% if playable %>
-    <span class="card-action-label"><%= local_assigns[:disabled] ? (@state["orders"] <= 0 ? "NO ORDERS" : "WAITING") : "PLAY · +#{data[:supply]} SUPPLY" %></span>
-    <%= button_to "", play_card_game_path(@game, card_index: local_assigns[:index]), class: "card-hit-area", disabled: local_assigns[:disabled], form: { class: "card-hit-form" }, aria: { label: "Play #{data[:name]} for #{data[:supply]} Supply" } %>
+    <span class="card-action-label"><%= local_assigns[:disabled] ? "WAITING" : "ASSIGN AS COMMAND" %></span>
+    <%= button_to "", play_card_game_path(@game, card_index: local_assigns[:index]), class: "card-hit-area", disabled: local_assigns[:disabled], form: { class: "card-hit-form" }, aria: { label: "Assign #{data[:name]} as a Command" } %>
   <% elsif local_assigns[:buyable] %>
     <span class="card-action-label"><%= local_assigns[:disabled] ? "COST #{cost}" : "BUY · #{cost} SUPPLY" %></span>
     <%= button_to "", buy_game_path(@game, slot: local_assigns[:index]), class: "card-hit-area", disabled: local_assigns[:disabled], form: { class: "card-hit-form" }, aria: { label: "Buy #{data[:name]} for #{cost} Supply" } %>

@@ -1,14 +1,18 @@
 <% signal_key = @state["incoming_crisis"] %>
-<% if signal_key && @state["phase"] == "play" %>
+<% if signal_key && %w[command action].include?(@state["phase"]) %>
   <% signal = crisis_data(signal_key) %>
   <section class="incoming-crisis threat-<%= signal[:threat].downcase %>">
     <div class="incoming-heading">
       <span class="incoming-pulse" aria-hidden="true"></span>
-      <span class="micro-label">INCOMING AFTER YOUR ACTION</span>
+      <span class="micro-label">INCOMING AFTER YOUR ACTIONS</span>
       <b><%= signal[:threat] %></b>
     </div>
     <h2><%= signal[:name] %></h2>
     <p><%= signal[:text] %></p>
-    <small>Choose your cards with this threat in mind.</small>
+    <% if @engine.tech?("def_analysis") && @state["glimpse"].present? %>
+      <small>DEEP INTEL: <%= crisis_data(@state["glimpse"].first)[:name] %> follows.</small>
+    <% else %>
+      <small>Choose your cards with this threat in mind.</small>
+    <% end %>
   </section>
 <% end %>

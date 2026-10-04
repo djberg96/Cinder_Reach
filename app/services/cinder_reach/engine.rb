@@ -2,6 +2,9 @@ module CinderReach
   class Engine
     attr_reader :game, :state
 
+    COMMAND_LIMIT = 2
+    ACTION_LIMIT = 2
+
     def self.start!(difficulty: "mandate")
       difficulty = difficulty.to_s
       raise InvalidMove, "Unknown difficulty" unless %w[prospect mandate silent].include?(difficulty)
@@ -14,21 +17,22 @@ module CinderReach
         crises.unshift("silent_ping")
       end
 
-      starter = ([ "colonist" ] * 5 + [ "militia" ] * 3 + [ "charter" ] * 2).shuffle
+      starter = ([ "colonist" ] * 4 + [ "survey_probe" ] * 3 + [ "militia" ] * 3 + [ "charter" ] * 2).shuffle
       state = {
+        "rules_version" => 2,
         "cycle" => 1, "stability" => difficulty == "prospect" ? 6 : 5,
         "fleet" => difficulty == "silent" ? 1 : 0, "colonies" => 0,
-        "grid" => false, "held" => false, "supply" => 0, "orders" => 3,
-        "tech" => { "expedition" => 0, "industry" => 0, "command" => 0 },
-        "deck" => starter.drop(5), "hand" => starter.first(5), "discard" => [], "played" => [], "scrapped" => [],
+        "grid" => false, "held" => false, "supply" => 0, "data" => 0, "actions" => ACTION_LIMIT,
+        "unlocked_tech" => [],
+        "deck" => starter.drop(6), "hand" => starter.first(6), "discard" => [], "played" => [], "support" => [], "scrapped" => [],
         "market_deck" => market.drop(4), "reach" => market.first(4),
-        "deep" => worlds.drop(3), "system" => worlds.first(3),
-        "surveyed_worlds" => [],
+        "deep" => worlds.drop(3), "system" => worlds.first(3), "surveyed_worlds" => [],
         "crisis_deck" => crises.drop(1), "crisis_discard" => [], "incoming_crisis" => crises.first, "current_crisis" => nil,
-        "phase" => "play", "surveyed_world" => nil, "surveyed_this_action" => false, "pending_effect" => nil,
-        "buy_discount" => 0, "survey_discount" => 0, "vault_discount" => false,
-        "intercept_used" => false, "stability_guard_used" => false, "glimpse" => nil,
-        "log" => [ "Cycle 1 begins. Incoming signal identified." ], "outcome" => nil
+        "phase" => "command", "surveyed_world" => nil, "surveyed_this_action" => false, "pending_effect" => nil,
+        "buy_discount" => 0, "survey_discount" => 0, "colony_discount" => 0, "research_discount" => 0,
+        "vault_discount" => false, "intercept_used" => false, "stability_guard_used" => false,
+        "unrest_guard_used" => false, "hunter_used" => false, "world_action_used" => false, "free_buy_used" => false,
+        "glimpse" => nil, "log" => [ "Cycle 1 begins. Choose two Commands." ], "outcome" => nil
       }
       Game.create!(difficulty: difficulty, status: "playing", state: state)
     end
@@ -44,48 +48,76 @@ module CinderReach
     def crisis(key) = Catalog.crisis(key)
     def playing? = game.status == "playing"
     def phase = state["phase"]
-    def tags = state["played"].filter_map { |key| card(key)[:tag] }
-    def tech_level(track) = state["tech"].fetch(track.to_s, 0)
-    def max_orders = tech_level("command") >= 1 ? 4 : 3
+    def tech?(key) = state["unlocked_tech"].include?(key.to_s)
+
+    def tags
+      result = state["played"].filter_map { |key| card(key)[:tag] }
+      result += %w[COLONY FLEET] if tech?("civ_unity") && result.include?("DECREE")
+      result
+    end
+
+    def tech_level(tree_key)
+      Catalog.tech_tree(tree_key.to_s)[:nodes].count { |node| tech?(node[:key]) }
+    rescue KeyError
+      0
+    end
+
+    def tech_available?(node_key)
+      node = Catalog.tech_node(node_key)
+      return false unless node && !tech?(node_key)
+      return false if node[:parent] && !tech?(node[:parent])
+
+      !node[:exclusive] || Catalog::TECH_TREES.values.flat_map { |tree| tree[:nodes] }
+        .none? { |candidate| candidate[:exclusive] == node[:exclusive] && tech?(candidate[:key]) }
+    end
+
+    def matching_tech_tags(node_key)
+      node = Catalog.tech_node(node_key)
+      return 0 unless node
+      tags.count { |tag| node[:tree_tags].include?(tag) }
+    end
+
+    def effective_research_cost(node_key)
+      node = Catalog.tech_node(node_key)
+      node ? [ node[:cost] - state["research_discount"], 0 ].max : 0
+    end
 
     def effective_buy_cost(key)
       info = card(key)
       vault = state["vault_discount"] && info[:tag] == "LAB"
-      permanent_discount = tech_level("industry") >= 1 ? 1 : 0
-      [ info[:cost] - state["buy_discount"] - permanent_discount - (vault ? 2 : 0), 0 ].max
+      [ info[:cost] - state["buy_discount"] - (tech?("ind_salvage") ? 1 : 0) - (vault ? 2 : 0), 0 ].max
     end
 
     def effective_survey_cost(key)
-      permanent_discount = tech_level("expedition") >= 1 ? 1 : 0
-      [ world(key)[:survey] - state["survey_discount"] - permanent_discount, 0 ].max
+      [ world(key)[:survey] - state["survey_discount"] - (tech?("nav_probes") ? 1 : 0), 0 ].max
     end
 
     def effective_colony_cost(key)
-      discount = tech_level("expedition") >= 3 ? 2 : 0
-      [ world(key)[:colony] - discount, 0 ].max
+      [ world(key)[:colony] - state["colony_discount"] - (tech?("nav_gateways") ? 1 : 0), 0 ].max
+    end
+
+    def scrappable_cards
+      %w[support played hand].flat_map do |pile|
+        state[pile].each_with_index.map { |key, index| [ pile, index, key ] }
+      end
     end
 
     def play_card!(index)
-      require_phase!("play")
-      raise InvalidMove, "Resolve the pending card effect first" if state["pending_effect"]
-      raise InvalidMove, "No Orders remain this cycle" if state["orders"] <= 0
+      require_phase!("command")
+      require_no_pending!
+      raise InvalidMove, "Two Commands are already assigned" if state["played"].length >= COMMAND_LIMIT
       key = state["hand"].delete_at(Integer(index))
       raise InvalidMove, "That card is no longer in your hand" unless key
 
       state["played"] << key
-      state["orders"] -= 1
-      state["supply"] += card(key)[:supply]
-      state["orders"] += card(key).fetch(:orders, 0)
-      log!("Played #{card(key)[:name]} for #{card(key)[:supply]} Supply.")
-      resolve_card!(key)
+      log!("Assigned #{card(key)[:name]} as Command #{state['played'].length}.")
+      resolve_command!(key)
+      commit_support! if state["played"].length == COMMAND_LIMIT && !state["pending_effect"]
       save!
     end
 
     def play_all!
-      require_phase!("play")
-      while state["hand"].any? && state["orders"].positive? && !state["pending_effect"] && playing?
-        play_card!(0)
-      end
+      play_card!(0) while phase == "command" && state["played"].length < COMMAND_LIMIT && !state["pending_effect"]
       self
     end
 
@@ -101,32 +133,30 @@ module CinderReach
       end
       state["pending_effect"] = nil
       state["glimpse"] = nil
+      commit_support! if phase == "command" && state["played"].length == COMMAND_LIMIT
       save!
     end
 
     def buy!(index)
-      require_phase!("play")
-      require_no_pending!
+      require_action!
       key = state["reach"][Integer(index)]
       raise InvalidMove, "That Reach slot is empty" unless key
-
       info = card(key)
       vault = state["vault_discount"] && info[:tag] == "LAB"
       cost = effective_buy_cost(key)
       raise InvalidMove, "You need #{cost} Supply" if state["supply"] < cost
 
       state["supply"] -= cost
-      state["discard"] << key
+      tech?("ind_precision") ? state["deck"].unshift(key) : state["discard"] << key
       state["reach"][Integer(index)] = state["market_deck"].shift
       state["vault_discount"] = false if vault
       log!("Bought #{info[:name]} for #{cost} Supply.")
-      begin_crisis!
+      complete_action!(type: "buy")
       save!
     end
 
     def survey!(index)
-      require_phase!("play")
-      require_no_pending!
+      require_action!
       key = state["system"][Integer(index)]
       raise InvalidMove, "That System slot is empty" unless key
       info = world(key)
@@ -134,7 +164,6 @@ module CinderReach
       if state["surveyed_worlds"].include?(key)
         colony_cost = effective_colony_cost(key)
         raise InvalidMove, "You need #{colony_cost} Supply" if state["supply"] < colony_cost
-
         state["surveyed_world"] = key
         state["surveyed_this_action"] = false
         state["phase"] = "survey_decision"
@@ -144,25 +173,15 @@ module CinderReach
       end
 
       cost = effective_survey_cost(key)
-      raise InvalidMove, "You need #{cost} Supply" if state["supply"] < cost
-
-      state["supply"] -= cost
+      raise InvalidMove, "You need #{cost} Data" if state["data"] < cost
+      state["data"] -= cost
       state["surveyed_worlds"] << key
       state["surveyed_world"] = key
       state["surveyed_this_action"] = true
       state["phase"] = "survey_decision"
-      log!("Surveyed #{info[:name]} for #{cost} Supply.")
-      case key
-      when "rust_mesa" then state["supply"] += 2
-      when "glass_sea" then draw!(1)
-      when "pale_garden" then adjust_stability!(1)
-      when "red_choir" then adjust_fleet!(-1)
-      when "vault_orbit" then state["vault_discount"] = true
-      when "black_relay"
-        state["pending_effect"] = "black_relay"
-        state["glimpse"] = [ state["incoming_crisis"], state["crisis_deck"].first ].compact
-      end
-      state["supply"] += 1 if tech_level("expedition") >= 2
+      log!("Surveyed #{info[:name]} for #{cost} Data.")
+      resolve_survey_reward!(key)
+      state["data"] += 1 if tech?("nav_xenology")
       save!
     end
 
@@ -199,64 +218,79 @@ module CinderReach
       state["surveyed_world"] = nil
       state["surveyed_this_action"] = false
       adjust_stability!(1) if key == "rust_mesa"
-      scrap_first_unrest!(piles: %w[hand discard]) if key == "pale_garden"
-      draw!(1) if key == "vault_orbit"
+      scrap_first_unrest! if key == "pale_garden"
+      reinforce_support!(1) if key == "vault_orbit"
       if key == "black_relay"
         relay_choice == "grid" ? state["grid"] = true : adjust_fleet!(-1)
       end
+      if tech?("civ_frontier")
+        state["data"] += 1
+        adjust_stability!(1)
+      end
       log!("Colonized #{info[:name]}. Colony #{state['colonies']} is online.")
       check_beacon!
-      begin_crisis! if playing?
-      save!
-    end
-
-    def research!(track_key)
-      require_phase!("play")
-      require_no_pending!
-      track_key = track_key.to_s
-      track = Catalog::TECH_TRACKS[track_key]
-      raise InvalidMove, "Unknown technology track" unless track
-      level = tech_level(track_key)
-      upgrade = track[:levels][level]
-      raise InvalidMove, "#{track[:name]} is already at maximum" unless upgrade
-
-      matching_tags = tags.count { |tag| track[:tags].include?(tag) }
-      raise InvalidMove, "You need #{upgrade[:tags]} matching tags in play" if matching_tags < upgrade[:tags]
-      raise InvalidMove, "You need #{upgrade[:cost]} Supply" if state["supply"] < upgrade[:cost]
-
-      state["supply"] -= upgrade[:cost]
-      state["tech"][track_key] = level + 1
-      state["grid"] = true if track_key == "command" && level + 1 == 3
-      log!("#{track[:name]} advanced to #{upgrade[:name]}.")
-      begin_crisis!
+      complete_action!(type: "world") if playing?
       save!
     end
 
     def pass_colony!
       require_phase!("survey_decision")
       require_no_pending!
-      log!("Left #{world(state['surveyed_world'])[:name]} uncolonized.")
+      log!("Left #{world(state['surveyed_world'])[:name]} uncolonized; its survey remains charted.")
       state["surveyed_world"] = nil
       state["surveyed_this_action"] = false
-      begin_crisis!
+      complete_action!(type: "world")
       save!
     end
 
-    def purge!(index)
-      require_phase!("play")
-      require_no_pending!
-      key = state["hand"][Integer(index)]
-      raise InvalidMove, "That card is no longer in your hand" unless key
+    def research!(node_key)
+      require_action!
+      node_key = node_key.to_s
+      node = Catalog.tech_node(node_key)
+      raise InvalidMove, "Unknown technology" unless node
+      raise InvalidMove, "That technology is already online or its branch is closed" unless tech_available?(node_key)
+      matching = matching_tech_tags(node_key)
+      raise InvalidMove, "You need #{node[:tags]} matching Command tags" if matching < node[:tags]
+      cost = effective_research_cost(node_key)
+      raise InvalidMove, "You need #{cost} Data" if state["data"] < cost
+
+      state["data"] -= cost
+      state["unlocked_tech"] << node_key
+      state["research_discount"] = 0
+      state["grid"] = true if node_key == "def_fortress"
+      log!("#{node[:tree_name]} unlocked #{node[:name]}.")
+      complete_action!(type: "research")
+      save!
+    end
+
+    def purge!(pile, index = nil)
+      require_action!
+      if index.nil?
+        index = pile
+        pile = "support"
+      end
+      pile = pile.to_s
+      raise InvalidMove, "Choose a Command or Support card" unless %w[support played].include?(pile)
+      key = state[pile][Integer(index)]
+      raise InvalidMove, "That card is no longer on the table" unless key
       raise InvalidMove, "Unrest can only be scrapped by card effects" if key == "unrest"
 
-      state["hand"].delete_at(Integer(index))
+      state[pile].delete_at(Integer(index))
       state["scrapped"] << key
       log!("Purged #{card(key)[:name]} from the deck.")
+      complete_action!(type: "purge")
+      save!
+    end
+
+    def end_actions!
+      require_action!
+      log!("Ended the action phase with #{state['actions']} action#{'s' unless state['actions'] == 1} unused.")
+      state["actions"] = 0
       begin_crisis!
       save!
     end
 
-    def resolve_crisis!(choice: nil, card_index: nil)
+    def resolve_crisis!(choice: nil, card_index: nil, pile: nil)
       require_phase!("crisis")
       key = state["current_crisis"]
       raise InvalidMove, "There is no crisis to resolve" unless key
@@ -264,7 +298,8 @@ module CinderReach
       case key
       when "ration_riot"
         unless tags.count("COLONY") >= 2
-          adjust_stability!(-1); gain_unrest!
+          adjust_stability!(-1)
+          gain_unrest! if playing?
         end
       when "admiralty_demand"
         adjust_fleet!(1, crisis: true) unless tags.include?("FLEET")
@@ -274,11 +309,12 @@ module CinderReach
         adjust_fleet!(1, crisis: true)
       when "council_fracture"
         unless tags.include?("DECREE")
-          adjust_stability!(-1); gain_unrest!
+          adjust_stability!(-1)
+          gain_unrest! if playing?
         end
       when "harvest_blight"
         if choice == "scrap"
-          scrap_hand_card!(card_index)
+          scrap_table_card!(pile, card_index)
         elsif choice == "stability"
           adjust_stability!(-1)
         else
@@ -288,11 +324,12 @@ module CinderReach
         adjust_fleet!(1, crisis: true) unless tags.include?("FLEET")
         adjust_stability!(-1) if state["fleet"] >= 3 && playing?
       when "refugee_wave"
-        gain_unrest!; draw!(1)
+        gain_unrest!
+        reinforce_support!(1) if playing?
       when "deep_signal"
         state["glimpse"] = state["crisis_deck"].first(1)
         if choice == "scrap"
-          scrap_hand_card!(card_index)
+          scrap_table_card!(pile, card_index)
         elsif choice == "fleet"
           adjust_fleet!(1, crisis: true)
         else
@@ -311,55 +348,125 @@ module CinderReach
 
     def cleanup!
       require_phase!("cleanup")
-      state["discard"].concat(state["played"]).concat(state["hand"])
+      banked_supply = tech?("ind_automation") ? [ state["supply"], 2 ].min : 0
+      state["discard"].concat(state["played"]).concat(state["support"]).concat(state["hand"])
       state["played"] = []
+      state["support"] = []
       state["hand"] = []
-      state["supply"] = 0
+      state["supply"] = banked_supply
       state["buy_discount"] = 0
       state["survey_discount"] = 0
+      state["colony_discount"] = 0
+      state["research_discount"] = 0
       state["intercept_used"] = false
       state["stability_guard_used"] = false
+      state["unrest_guard_used"] = false
+      state["hunter_used"] = false
+      state["world_action_used"] = false
+      state["free_buy_used"] = false
       state["glimpse"] = nil
       state["cycle"] += 1
       if state["cycle"] > 10
-        if state["colonies"] >= 2
-          win!("Mandate fulfilled. Ark-9 survives the tenth cycle.")
-        else
-          lose!("The mandate expired before two colonies could be established.")
-        end
+        state["colonies"] >= 2 ? win!("Mandate fulfilled. Ark-9 survives the tenth cycle.") : lose!("The mandate expired before two colonies could be established.")
       else
-        draw!(5)
-        state["orders"] = max_orders
-        state["supply"] = industry_starting_supply
-        state["phase"] = "play"
-        log!("Cycle #{state['cycle']} begins.")
+        draw!(6)
+        state["actions"] = ACTION_LIMIT
+        state["supply"] += 3 if tech?("ind_replicator")
+        state["supply"] += state["colonies"] if tech?("civ_beacon")
+        state["data"] += [ state["surveyed_worlds"].length, 3 ].min if tech?("nav_living_atlas")
+        state["phase"] = "command"
+        refresh_intel!
+        log!("Cycle #{state['cycle']} begins. Choose two Commands.")
       end
       save!
     end
 
     def score
-      owned = state.values_at("deck", "hand", "discard", "played").flatten
+      owned = state.values_at("deck", "hand", "discard", "played", "support").flatten
       state["colonies"] * 3 + state["stability"] + (state["fleet"] <= 1 ? 2 : 0) +
-        (state["grid"] ? 2 : 0) + owned.count { |key| card(key)[:tag] == "LAB" } - owned.count("unrest")
+        (state["grid"] ? 2 : 0) + state["unlocked_tech"].length + owned.count { |key| card(key)[:tag] == "LAB" } - owned.count("unrest")
     end
 
     private
 
-    def resolve_card!(key)
+    def require_action!
+      require_phase!("action")
+      require_no_pending!
+      raise InvalidMove, "No actions remain this cycle" unless state["actions"].positive?
+    end
+
+    def commit_support!
+      state["support"] = state["hand"]
+      state["hand"] = []
+      gained_supply = state["support"].sum { |key| card(key)[:supply] }
+      gained_data = state["support"].sum { |key| card(key)[:data] }
+      state["supply"] += gained_supply
+      state["data"] += gained_data
+      state["phase"] = "action"
+      refresh_intel!
+      log!("Committed #{state['support'].length} Support: +#{gained_supply} Supply, +#{gained_data} Data.")
+    end
+
+    def resolve_command!(key)
       case key
-      when "survey_skiff" then state["survey_discount"] += 1
-      when "decree" then scrap_first_unrest!
-      when "embassy", "arcology" then adjust_stability!(1)
-      when "field_lab" then state["buy_discount"] += 1
+      when "colonist", "habitat_ring", "outpost"
+        state["colony_discount"] += 1
+      when "arcology"
+        state["colony_discount"] += 1
+        adjust_stability!(1)
+      when "survey_probe", "survey_skiff"
+        state["survey_discount"] += 1
+      when "charter", "foundry"
+        state["buy_discount"] += 1
+      when "decree"
+        scrap_first_unrest!
+      when "embassy"
+        adjust_stability!(1)
+      when "field_lab"
+        state["research_discount"] += 1
       when "listener_array"
         if state["incoming_crisis"]
           state["pending_effect"] = "listener"
           state["glimpse"] = [ state["incoming_crisis"] ]
         end
-      when "gene_vault" then draw!(1)
-      when "gunship" then adjust_fleet!(-1)
-      when "defense_grid" then state["grid"] = true
+      when "gene_vault"
+        draw!(1)
+      when "gunship"
+        adjust_fleet!(-1)
+      when "defense_grid"
+        state["grid"] = true
       end
+      if card(key)[:tag] == "FLEET" && tech?("def_hunters") && !state["hunter_used"]
+        state["hunter_used"] = true
+        adjust_fleet!(-1)
+      end
+    end
+
+    def resolve_survey_reward!(key)
+      case key
+      when "rust_mesa" then state["supply"] += 2
+      when "glass_sea" then reinforce_support!(1)
+      when "pale_garden" then adjust_stability!(1)
+      when "red_choir" then adjust_fleet!(-1)
+      when "vault_orbit" then state["vault_discount"] = true
+      when "black_relay"
+        state["pending_effect"] = "black_relay"
+        state["glimpse"] = [ state["incoming_crisis"], state["crisis_deck"].first ].compact
+      end
+    end
+
+    def complete_action!(type:)
+      free = (type == "world" && tech?("nav_slipstream") && !state["world_action_used"]) ||
+        (type == "buy" && tech?("ind_forge") && !state["free_buy_used"])
+      state["world_action_used"] = true if type == "world"
+      state["free_buy_used"] = true if type == "buy"
+      if free
+        log!("Technology made that a free action.")
+      else
+        state["actions"] -= 1
+      end
+      state["phase"] = "action"
+      state["actions"].positive? ? refresh_intel! : begin_crisis!
     end
 
     def begin_crisis!
@@ -397,7 +504,8 @@ module CinderReach
       end
       state["fleet"] = [ [ state["fleet"] + amount, 0 ].max, 5 ].min
       if state["fleet"] >= 5
-        if state["colonies"] >= 2 && state["grid"]
+        colonies_needed = tech?("def_aegis") ? 1 : 2
+        if state["colonies"] >= colonies_needed && state["grid"]
           state["held"] = true
           log!("The Silent Fleet lands. The Grid holds.")
         else
@@ -407,9 +515,9 @@ module CinderReach
     end
 
     def adjust_stability!(amount)
-      if amount.negative? && tech_level("command") >= 2 && !state["stability_guard_used"]
+      if amount.negative? && tech?("civ_consensus") && !state["stability_guard_used"]
         state["stability_guard_used"] = true
-        log!("Civil Defense prevented the Stability loss.")
+        log!("Consensus Engine prevented the Stability loss.")
         return
       end
       state["stability"] = [ [ state["stability"] + amount, 0 ].max, 8 ].min
@@ -417,16 +525,22 @@ module CinderReach
     end
 
     def intercept_available?
-      (state["played"] & %w[militia_wing gunship defense_grid]).any?
+      special_command = (state["played"] & %w[militia_wing gunship defense_grid]).any?
+      special_command || (tech?("def_patrol") && tags.include?("FLEET"))
     end
 
     def gain_unrest!
+      if tech?("civ_mesh") && !state["unrest_guard_used"]
+        state["unrest_guard_used"] = true
+        log!("Civic Mesh prevented Unrest.")
+        return
+      end
       state["discard"] << "unrest"
       log!("Unrest entered your discard pile.")
     end
 
-    def scrap_first_unrest!(piles: %w[hand played discard])
-      piles.each do |pile|
+    def scrap_first_unrest!
+      %w[hand support played discard deck].each do |pile|
         index = state[pile].index("unrest")
         next unless index
         state[pile].delete_at(index)
@@ -437,51 +551,95 @@ module CinderReach
       false
     end
 
-    def scrap_hand_card!(index)
-      raise InvalidMove, "Choose a card from your hand" if index.nil?
-      key = state["hand"].delete_at(Integer(index))
-      raise InvalidMove, "That card is no longer in your hand" unless key
+    def scrap_table_card!(pile, index)
+      raise InvalidMove, "Choose a card from the table" if pile.nil? || index.nil?
+      pile = pile.to_s
+      raise InvalidMove, "Choose a card from the table" unless %w[support played hand].include?(pile)
+      key = state[pile].delete_at(Integer(index))
+      raise InvalidMove, "That card is no longer on the table" unless key
       state["scrapped"] << key
       log!("Scrapped #{card(key)[:name]}.")
     end
 
     def draw!(count)
       count.times do
-        if state["deck"].empty? && state["discard"].any?
-          state["deck"] = state["discard"].shuffle
-          state["discard"] = []
-          log!("Shuffled the discard into a new deck.")
-        end
-        drawn = state["deck"].shift
+        drawn = draw_card!
         state["hand"] << drawn if drawn
       end
+    end
+
+    def reinforce_support!(count)
+      count.times do
+        key = draw_card!
+        next unless key
+        state["support"] << key
+        state["supply"] += card(key)[:supply]
+        state["data"] += card(key)[:data]
+        log!("#{card(key)[:name]} reinforced Support: +#{card(key)[:supply]} Supply, +#{card(key)[:data]} Data.")
+      end
+    end
+
+    def draw_card!
+      if state["deck"].empty? && state["discard"].any?
+        state["deck"] = state["discard"].shuffle
+        state["discard"] = []
+        log!("Shuffled the discard into a new deck.")
+      end
+      state["deck"].shift
+    end
+
+    def refresh_intel!
+      state["glimpse"] = tech?("def_analysis") ? [ state["crisis_deck"].first ].compact : nil
     end
 
     def check_beacon!
       win!("Beacon lock achieved. Four colonies answer across the Reach.") if state["colonies"] >= 4 && state["fleet"] <= 4
     end
 
-    def industry_starting_supply
-      case tech_level("industry")
-      when 3 then 3
-      when 2 then 1
-      else 0
-      end
-    end
-
     def normalize_state!
-      state["tech"] ||= { "expedition" => 0, "industry" => 0, "command" => 0 }
-      %w[expedition industry command].each { |track| state["tech"][track] ||= 0 }
+      migrate_legacy_state! unless state["rules_version"] == 2
+      state["unlocked_tech"] ||= []
+      state["support"] ||= []
+      state["data"] ||= 0
+      state["actions"] ||= ACTION_LIMIT
       state["surveyed_worlds"] ||= []
       if state["surveyed_world"] && !state["surveyed_worlds"].include?(state["surveyed_world"])
         state["surveyed_worlds"] << state["surveyed_world"]
       end
-      state["orders"] = max_orders if state["orders"].nil?
-      state["surveyed_this_action"] = false if state["surveyed_this_action"].nil?
-      state["stability_guard_used"] = false if state["stability_guard_used"].nil?
-      unless state.key?("incoming_crisis")
-        state["incoming_crisis"] = state["crisis_deck"].shift
+      %w[buy_discount survey_discount colony_discount research_discount].each { |key| state[key] ||= 0 }
+      %w[surveyed_this_action stability_guard_used unrest_guard_used hunter_used world_action_used free_buy_used intercept_used].each do |key|
+        state[key] = false if state[key].nil?
       end
+      state["incoming_crisis"] = state["crisis_deck"].shift unless state.key?("incoming_crisis")
+    end
+
+    def migrate_legacy_state!
+      legacy_tech = state["tech"] || {}
+      migrations = {
+        "expedition" => %w[nav_probes nav_xenology nav_living_atlas],
+        "industry" => %w[ind_salvage ind_automation ind_replicator],
+        "command" => %w[def_analysis def_fortress def_aegis]
+      }
+      state["unlocked_tech"] = migrations.flat_map { |track, nodes| nodes.first(legacy_tech.fetch(track, 0).to_i) }
+      state["support"] ||= []
+      state["data"] ||= 0
+      state["actions"] = ACTION_LIMIT
+      if state["phase"] == "play"
+        cards_in_cycle = state["played"].length + state["hand"].length
+        draw!(6 - cards_in_cycle) if cards_in_cycle < 6
+        if state["played"].length >= COMMAND_LIMIT
+          state["support"] = state["played"].drop(COMMAND_LIMIT) + state["hand"]
+          state["played"] = state["played"].first(COMMAND_LIMIT)
+          state["hand"] = []
+          state["supply"] = state["support"].sum { |key| card(key)[:supply] }
+          state["data"] += state["support"].sum { |key| card(key)[:data] }
+          state["phase"] = "action"
+        else
+          state["supply"] = 0
+          state["phase"] = "command"
+        end
+      end
+      state["rules_version"] = 2
     end
 
     def win!(message)

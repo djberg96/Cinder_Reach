@@ -1,18 +1,23 @@
 <% data = card_data(card_key) %>
-<article class="game-card played-card card-<%= card_tone(data[:tag]) %>">
+<% role = local_assigns.fetch(:role, "command") %>
+<article class="game-card played-card role-<%= role %> card-<%= card_tone(data[:tag]) %>">
   <div class="card-sigil" aria-hidden="true"><%= tag_symbol(data[:tag]) || "×" %></div>
   <header>
     <div>
-      <span class="card-kind">PLAYED</span>
+      <span class="card-kind"><%= role.upcase %></span>
       <h3><%= data[:name] %></h3>
     </div>
-    <strong class="played-yield">+<%= data[:supply] %><small>SUPPLY</small></strong>
+    <% if role == "support" %>
+      <strong class="played-yield"><%= data[:supply] %>S · <%= data[:data] %>D<small>GENERATED</small></strong>
+    <% else %>
+      <strong class="played-yield"><%= tag_symbol(data[:tag]) || "×" %><small>COMMAND</small></strong>
+    <% end %>
   </header>
   <div class="card-art" aria-hidden="true">
     <span class="art-orbit"></span><span class="art-core"></span><span class="art-line"></span>
   </div>
   <div class="card-copy">
     <% if data[:tag] %><span class="tag tag-<%= data[:tag].downcase %>"><%= tag_symbol(data[:tag]) %> <%= data[:tag] %></span><% end %>
-    <p><%= data[:text] %></p>
+    <p><%= role == "support" ? "Generated #{data[:supply]} Supply and #{data[:data]} Data." : data[:command_text] %></p>
   </div>
 </article>

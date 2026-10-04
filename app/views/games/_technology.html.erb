@@ -1,33 +1,53 @@
 <section class="technology-console">
   <div class="technology-heading">
-    <div><span class="micro-label">ARK-9 DEVELOPMENT</span><h2>Technology</h2></div>
-    <span>Research is a main action</span>
+    <div><span class="micro-label">ARK-9 DEVELOPMENT</span><h2>Research lattice</h2></div>
+    <span><b><%= @state["data"] %></b> DATA BANKED</span>
   </div>
 
-  <div class="tech-tracks">
-    <% CinderReach::Catalog::TECH_TRACKS.each do |track_key, track| %>
-      <% level = @engine.tech_level(track_key) %>
-      <% upgrade = track[:levels][level] %>
-      <% matching_tags = @engine.tags.count { |tag| track[:tags].include?(tag) } %>
-      <% actionable = upgrade && @state["phase"] == "play" && !@state["pending_effect"] && @state["supply"] >= upgrade[:cost] && matching_tags >= upgrade[:tags] %>
-      <article class="tech-track tech-<%= track_key %> <%= 'is-actionable' if actionable %> <%= 'is-complete' unless upgrade %>">
-        <div class="tech-title">
-          <i><%= track[:symbol] %></i>
-          <div><span><%= track[:name] %></span><strong><%= upgrade ? upgrade[:name] : "Track complete" %></strong></div>
-          <div class="tech-pips" aria-label="Level <%= level %> of 3">
-            <% 1.upto(3) do |step| %><b class="<%= 'filled' if step <= level %>"><%= step %></b><% end %>
-          </div>
-        </div>
-        <% if upgrade %>
-          <p><%= upgrade[:text] %></p>
-          <div class="tech-requirement">
-            <span><%= matching_tags %>/<%= upgrade[:tags] %> <%= track[:tags].join(" or ") %></span>
-            <%= button_to "RESEARCH · #{upgrade[:cost]}", research_game_path(@game, track: track_key), disabled: !actionable, class: "tech-button" %>
-          </div>
-        <% else %>
-          <p>Every system in this doctrine is online.</p>
-        <% end %>
-      </article>
+  <div class="tech-summary">
+    <% CinderReach::Catalog::TECH_TREES.each do |tree_key, tree| %>
+      <% unlocked = tree[:nodes].count { |node| @engine.tech?(node[:key]) } %>
+      <div class="tech-summary-row">
+        <i><%= tree[:symbol] %></i><span><b><%= tree[:name] %></b><small><%= tree[:tags].join(" / ") %></small></span>
+        <em><%= unlocked %>/5</em>
+      </div>
     <% end %>
   </div>
+
+  <details class="tech-tree-drawer">
+    <summary>Open technology tree <span>20 upgrades · 4 doctrines</span></summary>
+    <div class="tech-tree-overlay">
+      <div class="tech-tree-panel">
+        <div class="tech-tree-header">
+          <div><span class="micro-label">ARK-9 RESEARCH LATTICE</span><h2>Choose a doctrine</h2><p>Branches marked as alternatives lock when you commit to one path.</p></div>
+          <span class="tech-data-bank"><b><%= @state["data"] %></b> DATA</span>
+        </div>
+        <div class="tech-tree-grid">
+          <% CinderReach::Catalog::TECH_TREES.each do |tree_key, tree| %>
+            <section class="tech-branch tech-<%= tree_key %>">
+              <header><i><%= tree[:symbol] %></i><div><h3><%= tree[:name] %></h3><span><%= tree[:tags].join(" OR ") %> COMMANDS</span></div></header>
+              <div class="tech-nodes">
+                <% tree[:nodes].each do |node| %>
+                  <% unlocked = @engine.tech?(node[:key]) %>
+                  <% available = @engine.tech_available?(node[:key]) %>
+                  <% matching_tags = @engine.matching_tech_tags(node[:key]) %>
+                  <% cost = @engine.effective_research_cost(node[:key]) %>
+                  <% actionable = available && @state["phase"] == "action" && !@state["pending_effect"] && @state["data"] >= cost && matching_tags >= node[:tags] %>
+                  <article class="tech-node <%= 'is-unlocked' if unlocked %> <%= 'is-available' if available %> <%= 'is-actionable' if actionable %>">
+                    <div class="tech-node-top"><span><%= unlocked ? "ONLINE" : node[:parent] ? "BRANCH" : "FOUNDATION" %></span><b><%= node[:cost] %>D</b></div>
+                    <h4><%= node[:name] %></h4>
+                    <p><%= node[:text] %></p>
+                    <% unless unlocked %>
+                      <div class="tech-node-requirement"><span><%= matching_tags %>/<%= node[:tags] %> TAGS</span><%= node[:parent] ? "Requires #{CinderReach::Catalog.tech_node(node[:parent])[:name]}" : "No prerequisite" %></div>
+                      <%= button_to(actionable ? "RESEARCH · #{cost} DATA" : "LOCKED · #{cost} DATA", research_game_path(@game, tech: node[:key]), disabled: !actionable, class: "tech-button") %>
+                    <% end %>
+                  </article>
+                <% end %>
+              </div>
+            </section>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </details>
 </section>

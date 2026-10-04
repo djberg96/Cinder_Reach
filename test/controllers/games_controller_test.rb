@@ -45,7 +45,9 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".played-card h3", played_name
     assert_select ".played-card .card-art", 1
     assert_select ".played-card .card-copy", 1
-    assert_select ".turn-guide h2", "Choose Command 2 of 2"
+    assert_select ".turn-guide h2", "Choose a command"
+    assert_select ".turn-guide .guide-step", /COMMAND 2\/2/
+    assert_select ".turn-guide .guide-tooltip", /every remaining card becomes Support/
     assert_select ".hand-row .card-hit-form", 5
   end
 

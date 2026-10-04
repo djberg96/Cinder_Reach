@@ -1,10 +1,18 @@
 <% data = card_data(card_key) %>
-<article class="played-card played-<%= card_tone(data[:tag]) %>">
-  <span class="played-sigil"><%= tag_symbol(data[:tag]) || "×" %></span>
-  <div>
-    <span class="card-kind">PLAYED</span>
-    <h3><%= data[:name] %></h3>
-    <% if data[:tag] %><span class="tag tag-<%= data[:tag].downcase %>"><%= tag_symbol(data[:tag]) %> <%= data[:tag] %></span><% end %>
+<article class="game-card played-card card-<%= card_tone(data[:tag]) %>">
+  <div class="card-sigil" aria-hidden="true"><%= tag_symbol(data[:tag]) || "×" %></div>
+  <header>
+    <div>
+      <span class="card-kind">PLAYED</span>
+      <h3><%= data[:name] %></h3>
+    </div>
+    <strong class="played-yield">+<%= data[:supply] %><small>SUPPLY</small></strong>
+  </header>
+  <div class="card-art" aria-hidden="true">
+    <span class="art-orbit"></span><span class="art-core"></span><span class="art-line"></span>
   </div>
-  <strong>+<%= data[:supply] %><small> SUPPLY</small></strong>
+  <div class="card-copy">
+    <% if data[:tag] %><span class="tag tag-<%= data[:tag].downcase %>"><%= tag_symbol(data[:tag]) %> <%= data[:tag] %></span><% end %>
+    <p><%= data[:text] %></p>
+  </div>
 </article>

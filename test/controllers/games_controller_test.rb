@@ -41,6 +41,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".played-card", 1
     assert_select ".played-card h3", played_name
+    assert_select ".played-card .card-art", 1
+    assert_select ".played-card .card-copy", 1
     assert_select ".turn-guide h2", "Commit your turn"
     assert_select ".guide-supply strong", game.reload.state["supply"].to_s
     assert_select ".hand-row .card-hit-form", 4

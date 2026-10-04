@@ -8,8 +8,11 @@
     <% CinderReach::Catalog::TECH_TREES.each do |tree_key, tree| %>
       <% unlocked = tree[:nodes].count { |node| @engine.tech?(node[:key]) } %>
       <div class="tech-summary-row">
-        <i><%= tree[:symbol] %></i><span><b><%= tree[:name] %></b><small><%= tree[:tags].join(" / ") %></small></span>
-        <em><%= unlocked %>/5</em>
+        <i><%= tree[:symbol] %></i>
+        <span>
+          <b><%= tree[:name] %></b>
+          <span class="tech-summary-meta"><small><%= tree[:tags].join(" / ") %></small><em><%= unlocked %>/5</em></span>
+        </span>
       </div>
     <% end %>
   </div>
